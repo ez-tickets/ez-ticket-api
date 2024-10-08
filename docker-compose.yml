@@ -1,0 +1,8 @@
+version: '3'
+services:
+  ez-tickets-api:
+    build: .
+    ports:
+      - "3854:3854"
+    env_file:
+      - .env.docker
