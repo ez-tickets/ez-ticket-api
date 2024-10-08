@@ -1,10 +1,8 @@
-use std::fmt::{Display, Formatter};
 use error_stack::Context;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, thiserror::Error)]
-pub enum ServerError {
-}
-
+pub enum ServerError {}
 
 #[derive(Debug)]
 pub struct UnrecoverableError;
