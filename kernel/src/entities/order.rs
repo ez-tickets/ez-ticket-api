@@ -1,8 +1,14 @@
 mod id;
 mod item;
+mod options;
+mod product;
 mod quantity;
 
-pub use self::{id::*, item::*, quantity::*};
+pub use self::id::*;
+pub use self::item::*;
+pub use self::options::*;
+pub use self::product::*;
+pub use self::quantity::*;
 
 use serde::{Deserialize, Serialize};
 

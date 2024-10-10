@@ -7,10 +7,12 @@ mod price;
 mod stock;
 
 pub use self::{category::*, description::*, id::*, name::*, options::*, price::*, stock::*};
+use std::collections::HashSet;
 
+use crate::entities::IngredientId;
+use crate::errors::KernelError;
 use destructure::{Destructure, Mutation};
 use serde::{Deserialize, Serialize};
-use crate::errors::KernelError;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Product {
@@ -20,7 +22,7 @@ pub struct Product {
     stock: Stock,
     price: Price,
     category: Category,
-    options: Option<Vec<ProductOption>>,
+    options: Option<HashSet<ProductOption>>,
 }
 
 impl Product {
@@ -34,8 +36,14 @@ impl Product {
         category: CategoryId,
         options: Option<Vec<ProductId>>,
         category_looking: impl Fn(&CategoryId) -> Result<Category, KernelError>,
-        options_looking: impl Fn(&Option<Vec<ProductId>>) -> Result<Option<Vec<ProductOption>>, KernelError>,
+        options_looking: impl Fn(
+            &Option<Vec<ProductId>>,
+        ) -> Result<Option<HashSet<ProductOption>>, KernelError>,
+        ingredients: HashSet<IngredientId>,
+        ingredient_consume: impl Fn(&HashSet<IngredientId>) -> Result<(), KernelError>,
     ) -> Result<Product, KernelError> {
+        ingredient_consume(&ingredients)?;
+
         let category = category_looking(&category)?;
         let options = options_looking(&options)?;
 
@@ -76,7 +84,7 @@ impl Product {
         &self.category
     }
 
-    pub fn options(&self) -> &Option<Vec<ProductOption>> {
+    pub fn options(&self) -> &Option<HashSet<ProductOption>> {
         &self.options
     }
 }
