@@ -1,7 +1,4 @@
 mod order;
 mod product;
 
-pub use self::{
-    order::*,
-    product::*,
-};
+pub use self::{order::*, product::*};

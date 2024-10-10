@@ -307,6 +307,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "destructure"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfd72fa5c0aa087c0ce4f7039c664b106d638a61a6088663415b34bf4e803881"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -705,6 +715,7 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "destructure",
  "error-stack",
  "serde",
  "thiserror",

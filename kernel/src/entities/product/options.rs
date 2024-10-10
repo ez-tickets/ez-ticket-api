@@ -1,7 +1,15 @@
+use crate::entities::{Price, ProductId, ProductName};
 use serde::{Deserialize, Serialize};
-use crate::entities::ProductId;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ProductOption {
-    id: ProductId
+    id: ProductId,
+    name: ProductName,
+    price: Price,
+}
+
+impl ProductOption {
+    pub fn new(id: ProductId, name: ProductName, price: Price) -> Self {
+        Self { id, name, price }
+    }
 }
