@@ -12,8 +12,6 @@ pub use self::name::*;
 pub use self::price::*;
 pub use self::stock::*;
 
-use std::collections::HashSet;
-
 use destructure::{Destructure, Mutation};
 use serde::{Deserialize, Serialize};
 
