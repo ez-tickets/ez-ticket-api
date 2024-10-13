@@ -1,4 +1,3 @@
-use crate::entities::ProductId;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -6,7 +5,7 @@ use uuid::Uuid;
 pub struct ProductOptionId(Uuid);
 
 impl ProductOptionId {
-    pub fn new(id: impl Into<Uuid>) -> Self {
+    pub fn new(id: impl Into<Uuid>) -> ProductOptionId {
         Self(id.into())
     }
 }
@@ -20,12 +19,6 @@ impl AsRef<Uuid> for ProductOptionId {
 impl From<ProductOptionId> for Uuid {
     fn from(value: ProductOptionId) -> Self {
         value.0
-    }
-}
-
-impl From<ProductOptionId> for ProductId {
-    fn from(value: ProductOptionId) -> Self {
-        Self::new(value.0)
     }
 }
 
