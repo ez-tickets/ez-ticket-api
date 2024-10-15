@@ -2,7 +2,9 @@ mod id;
 mod name;
 mod ordering;
 
-pub use self::{id::*, name::*, ordering::*};
+pub use self::name::*;
+pub use self::id::*;
+pub use self::ordering::*;
 use std::cmp::Ordering;
 
 use serde::{Deserialize, Serialize};

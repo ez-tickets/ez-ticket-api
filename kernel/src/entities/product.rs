@@ -1,11 +1,10 @@
-mod category;
 mod description;
 mod id;
 mod name;
 mod price;
 mod stock;
 
-pub use self::category::*;
+pub use crate::entities::category::*;
 pub use self::description::*;
 pub use self::id::*;
 pub use self::name::*;
@@ -18,7 +17,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Product {
     id: ProductId,
-    category: CategoryId,
     name: ProductName,
     description: ProductDescription,
     stock: Stock,
@@ -28,7 +26,6 @@ pub struct Product {
 impl Product {
     pub fn create(
         id: ProductId,
-        category: CategoryId,
         name: ProductName,
         description: ProductDescription,
         stock: Stock,
@@ -40,7 +37,6 @@ impl Product {
             description,
             stock,
             price,
-            category,
         }
     }
 }
@@ -49,11 +45,7 @@ impl Product {
     pub fn id(&self) -> &ProductId {
         &self.id
     }
-
-    pub fn category(&self) -> &CategoryId {
-        &self.category
-    }
-
+    
     pub fn name(&self) -> &ProductName {
         &self.name
     }
