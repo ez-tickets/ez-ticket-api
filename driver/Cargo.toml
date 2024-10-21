@@ -14,4 +14,5 @@ thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }
 
+application = { path = "../application" }
 kernel = { path = "../kernel" }

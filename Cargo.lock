@@ -338,6 +338,7 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 name = "driver"
 version = "0.1.0"
 dependencies = [
+ "application",
  "async-trait",
  "error-stack",
  "kernel",

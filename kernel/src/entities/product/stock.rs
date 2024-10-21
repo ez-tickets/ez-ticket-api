@@ -1,4 +1,3 @@
-use crate::entities::Quantity;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
@@ -13,8 +12,8 @@ impl Stock {
         self.0 += stock.into();
     }
 
-    pub fn bring_out(&mut self, quantity: &Quantity) {
-        self.0 -= quantity.as_ref();
+    pub fn bring_out(&mut self, out: impl Into<i32>) {
+        self.0 -= out.into();
     }
 }
 
