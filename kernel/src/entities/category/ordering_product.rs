@@ -1,7 +1,7 @@
-use std::cmp::Ordering;
+use crate::entities::ProductId;
 use destructure::{Destructure, Mutation};
 use serde::{Deserialize, Serialize};
-use crate::entities::ProductId;
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct OrderingProduct {
@@ -16,11 +16,11 @@ impl OrderingProduct {
             product_id,
         }
     }
-    
+
     pub fn ordered(&self) -> i32 {
         self.ordered
     }
-    
+
     pub fn product_id(&self) -> &ProductId {
         &self.product_id
     }

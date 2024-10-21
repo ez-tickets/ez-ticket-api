@@ -9,29 +9,34 @@ pub trait DependOnProductCommandService: 'static + Sync + Send {
     fn product_command_service(&self) -> &Self::ProductCommandService;
 }
 
-impl<T> ProductCommandService for T
-where
-    T: DependOnProductRepository
-{}
+impl<T> ProductCommandService for T where T: DependOnProductRepository {}
 
 #[async_trait::async_trait]
 pub trait ProductCommandService: 'static + Sync + Send
 where
-    Self:
-        DependOnProductRepository
+    Self: DependOnProductRepository,
 {
-    async fn execute(&self, id: Option<ProductId>, cmd: ProductCommand) -> Result<(), Report<ApplicationError>> {
+    async fn execute(
+        &self,
+        id: Option<ProductId>,
+        cmd: ProductCommand,
+    ) -> Result<(), Report<ApplicationError>> {
         match cmd {
-            ProductCommand::Register { name, desc, price, stock } => {
+            ProductCommand::Register {
+                name,
+                desc,
+                price,
+                stock,
+            } => {
                 let name = ProductName::new(name);
                 let desc = ProductDescription::new(desc);
                 let price = Price::new(price);
                 let stock = Stock::new(stock);
-                
+
                 let id = ProductId::default();
-                
+
                 let product = Product::create(id, name, desc, stock, price);
-                
+
                 self.product_repository()
                     .create(&product)
                     .await
@@ -39,18 +44,19 @@ where
             }
             ProductCommand::UpdateName { name } => {
                 let id = id.ok_or(Report::new(ApplicationError::Require { data: "id" }))?;
-                
+
                 let name = ProductName::new(name);
-                
-                let mut product = self.product_repository()
+
+                let mut product = self
+                    .product_repository()
                     .find_by_id(&id)
                     .await
                     .change_context_lazy(|| ApplicationError::Driver)?;
-                
+
                 product.substitute(|prod| {
                     *prod.name = name;
                 });
-                
+
                 self.product_repository()
                     .update(&id, &product)
                     .await
@@ -61,7 +67,8 @@ where
 
                 let desc = ProductDescription::new(desc);
 
-                let mut product = self.product_repository()
+                let mut product = self
+                    .product_repository()
                     .find_by_id(&id)
                     .await
                     .change_context_lazy(|| ApplicationError::Driver)?;
@@ -80,7 +87,8 @@ where
 
                 let amount = Stock::new(amount);
 
-                let mut product = self.product_repository()
+                let mut product = self
+                    .product_repository()
                     .find_by_id(&id)
                     .await
                     .change_context_lazy(|| ApplicationError::Driver)?;
@@ -97,7 +105,8 @@ where
             ProductCommand::StockOut { amount } => {
                 let id = id.ok_or(Report::new(ApplicationError::Require { data: "id" }))?;
 
-                let mut product = self.product_repository()
+                let mut product = self
+                    .product_repository()
                     .find_by_id(&id)
                     .await
                     .change_context_lazy(|| ApplicationError::Driver)?;
@@ -116,7 +125,8 @@ where
 
                 let price = Price::new(price);
 
-                let mut product = self.product_repository()
+                let mut product = self
+                    .product_repository()
                     .find_by_id(&id)
                     .await
                     .change_context_lazy(|| ApplicationError::Driver)?;
@@ -139,7 +149,7 @@ where
                     .change_context_lazy(|| ApplicationError::Driver)?;
             }
         }
-        
+
         Ok(())
     }
 }

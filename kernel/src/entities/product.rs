@@ -44,7 +44,7 @@ impl Product {
     pub fn id(&self) -> &ProductId {
         &self.id
     }
-    
+
     pub fn name(&self) -> &ProductName {
         &self.name
     }

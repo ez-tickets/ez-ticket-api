@@ -22,7 +22,12 @@ impl ProductOption {
         name: ProductName,
         price: Price,
     ) -> Result<Self, KernelError> {
-        Ok(Self { id, product, name, price })
+        Ok(Self {
+            id,
+            product,
+            name,
+            price,
+        })
     }
 }
 

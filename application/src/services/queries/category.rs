@@ -11,5 +11,8 @@ pub trait DependOnCategoryQueryService: 'static + Sync + Send {
 #[async_trait::async_trait]
 pub trait CategoryQueryService: 'static + Sync + Send {
     async fn find_all_category(&self) -> Result<BTreeSet<CategoryId>, Report<ApplicationError>>;
-    async fn find_all_product_by_category_id(&self, id: &CategoryId) -> Result<BTreeSet<Category>, Report<ApplicationError>>;
+    async fn find_all_product_by_category_id(
+        &self,
+        id: &CategoryId,
+    ) -> Result<BTreeSet<Category>, Report<ApplicationError>>;
 }
