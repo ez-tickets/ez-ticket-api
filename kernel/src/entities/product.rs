@@ -4,7 +4,6 @@ mod name;
 mod price;
 mod stock;
 
-pub use crate::entities::category::*;
 pub use self::description::*;
 pub use self::id::*;
 pub use self::name::*;

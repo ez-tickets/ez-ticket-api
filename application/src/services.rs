@@ -1,2 +1,2 @@
-mod commands;
-mod queries;
+pub mod commands;
+pub mod queries;

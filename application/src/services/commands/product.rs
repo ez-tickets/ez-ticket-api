@@ -9,6 +9,11 @@ pub trait DependOnProductCommandService: 'static + Sync + Send {
     fn product_command_service(&self) -> &Self::ProductCommandService;
 }
 
+impl<T> ProductCommandService for T
+where
+    T: DependOnProductRepository
+{}
+
 #[async_trait::async_trait]
 pub trait ProductCommandService: 'static + Sync + Send
 where

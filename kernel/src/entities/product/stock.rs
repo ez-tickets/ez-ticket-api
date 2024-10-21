@@ -1,4 +1,3 @@
-use crate::entities::Quantity;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]

@@ -1,24 +1,52 @@
 mod id;
 mod name;
 mod ordering;
+mod ordering_product;
 
 pub use self::name::*;
 pub use self::id::*;
 pub use self::ordering::*;
-use std::cmp::Ordering;
+pub use self::ordering_product::*;
 
+use std::cmp::Ordering;
+use std::collections::BTreeSet;
+use destructure::{Destructure, Mutation};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Category {
     id: CategoryId,
     name: CategoryName,
     ordering: CategoryOrdering,
+    products: BTreeSet<OrderingProduct>,
 }
 
 impl Category {
-    pub fn new(id: CategoryId, name: CategoryName, ordering: CategoryOrdering) -> Self {
-        Self { id, name, ordering }
+    pub fn new(
+        id: CategoryId, 
+        name: CategoryName, 
+        ordering: CategoryOrdering,
+        products: BTreeSet<OrderingProduct>
+    ) -> Self {
+        Self { 
+            id, 
+            name, 
+            ordering,
+            products
+        }
+    }
+    
+    pub fn create(
+        id: CategoryId, 
+        name: CategoryName, 
+        ordering: CategoryOrdering
+    ) -> Self {
+        Self {
+            id,
+            name,
+            ordering,
+            products: BTreeSet::new(),
+        }
     }
 }
 
@@ -33,6 +61,10 @@ impl Category {
 
     pub fn ordering(&self) -> &CategoryOrdering {
         &self.ordering
+    }
+    
+    pub fn products(&self) -> &BTreeSet<OrderingProduct> {
+        &self.products
     }
 }
 
