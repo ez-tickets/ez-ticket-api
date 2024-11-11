@@ -1,4 +1,4 @@
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use error_stack::{Report, ResultExt};
 use server::errors::UnrecoverableError;
@@ -9,8 +9,19 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
     server::logging::init();
 
     tracing::info!("starting ez-ticket-api.");
-
-    let router = Router::new().route("/", get(|| async { "todo" }));
+    
+    let order = Router::new().route("/", get(|| async { "todo" }));
+    let product = Router::new().route("/", get(|| async { "todo" }));
+    let category = Router::new().route("/", get(|| async { "todo" }));
+    
+    let content = Router::new()
+        .route("/", post());
+    
+    let router = Router::new()
+        .nest("/order", order)
+        .nest("/products", product)
+        .nest("/categories", category)
+        .nest("/content", content);
 
     let listener = TcpListener::bind("0.0.0.0:3650")
         .await
