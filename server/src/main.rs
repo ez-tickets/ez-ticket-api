@@ -14,14 +14,10 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
     let product = Router::new().route("/", get(|| async { "todo" }));
     let category = Router::new().route("/", get(|| async { "todo" }));
     
-    let content = Router::new()
-        .route("/", post());
-    
     let router = Router::new()
         .nest("/order", order)
         .nest("/products", product)
-        .nest("/categories", category)
-        .nest("/content", content);
+        .nest("/categories", category);
 
     let listener = TcpListener::bind("0.0.0.0:3650")
         .await

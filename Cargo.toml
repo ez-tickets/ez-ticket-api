@@ -18,3 +18,4 @@ thiserror = "^2"
 error-stack = "^0.5"
 async-trait = "^0.1"
 
+spectroscopy = "0.2.0-alpha"
