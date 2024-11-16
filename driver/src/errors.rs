@@ -1,2 +1,7 @@
 #[derive(Debug, thiserror::Error)]
-pub enum DriverError {}
+pub enum DriverError {
+    #[error("Cannot access database to {0}")]
+    Connection(String),
+    #[error("Failure migration database")]
+    Migration,
+}

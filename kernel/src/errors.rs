@@ -1,2 +1,5 @@
 #[derive(Debug, thiserror::Error)]
-pub enum KernelError {}
+pub enum KernelError {
+    #[error("")]
+    AlreadyExists
+}
