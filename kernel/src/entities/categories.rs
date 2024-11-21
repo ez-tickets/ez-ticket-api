@@ -1,11 +1,14 @@
 use crate::commands::CategoriesCommand;
 use crate::entities::CategoryId;
 use crate::events::CategoriesEvent;
-use nitinol::agent::{Context, Publisher};
+use nitinol::agent::{Applicator, Context, Publisher};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::convert::Infallible;
+use async_trait::async_trait;
+use nitinol::projection::Projection;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Categories {
     ordering: BTreeMap<i32, CategoryId>
 }
@@ -22,14 +25,7 @@ impl AsRef<BTreeMap<i32, CategoryId>> for Categories {
     }
 }
 
-impl Default for Categories {
-    fn default() -> Self {
-        Self {
-            ordering: BTreeMap::new()
-        }
-    }
-}
-
+#[async_trait]
 impl Publisher<CategoriesCommand> for Categories {
     type Event = CategoriesEvent;
     type Rejection = ();
@@ -43,12 +39,45 @@ impl Publisher<CategoriesCommand> for Categories {
                 CategoriesEvent::Updated { new }
             }
             CategoriesCommand::Add { id } => {
-                todo!()
+                if self.ordering.iter().any(|(_, v)| v == &id) {
+                    return Err(());
+                }
+                CategoriesEvent::Added { id }
             }
             CategoriesCommand::Remove { id } => {
-                todo!()
+                if self.ordering.iter().any(|(_, v)| v != &id) {
+                    return Err(());
+                }
+                CategoriesEvent::Removed { id }
             }
         };
         Ok(ev)
+    }
+}
+
+#[async_trait]
+impl Applicator<CategoriesEvent> for Categories {
+    async fn apply(&mut self, event: CategoriesEvent, _: &mut Context) {
+        Projection::apply(self, event).await.unwrap();
+    }
+}
+
+#[async_trait]
+impl Projection<CategoriesEvent> for Categories {
+    type Rejection = Infallible;
+    
+    async fn apply(&mut self, event: CategoriesEvent) -> Result<(), Self::Rejection> {
+        match event {
+            CategoriesEvent::Updated { new } => {
+                self.ordering = new;
+            }
+            CategoriesEvent::Added { id } => {
+                self.ordering.insert(self.ordering.len() as i32, id);
+            }
+            CategoriesEvent::Removed { id } => {
+                self.ordering.retain(|_, v| v != &id);
+            }
+        }
+        Ok(())
     }
 }

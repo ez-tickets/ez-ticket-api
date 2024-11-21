@@ -1,21 +1,21 @@
-use crate::entities::{ProductOptionId, Quantity};
+use crate::entities::{ProductId, Quantity};
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct OrderOption {
-    id: ProductOptionId,
+    id: ProductId,
     quantity: Quantity,
 }
 
 impl OrderOption {
-    pub fn new(id: ProductOptionId, quantity: Quantity) -> Self {
+    pub fn new(id: ProductId, quantity: Quantity) -> Self {
         Self { id, quantity }
     }
 }
 
 impl OrderOption {
-    pub fn id(&self) -> &ProductOptionId {
+    pub fn id(&self) -> &ProductId {
         &self.id
     }
 

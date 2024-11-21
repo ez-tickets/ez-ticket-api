@@ -1,6 +1,6 @@
+use nitinol::errors::{DeserializeError, SerializeError};
+use nitinol::Event;
 use serde::{Deserialize, Serialize};
-use spectroscopy::errors::{DeserializeError, SerializeError};
-use spectroscopy::Event;
 use crate::entities::{Price, ProductDescription, ProductName, Stock};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -33,7 +33,7 @@ impl Event for ProductEvent {
     const REGISTRY_KEY: &'static str = "product-event";
 
     fn as_bytes(&self) -> Result<Vec<u8>, SerializeError> {
-        Ok(flexbuffers::to_vec(&self)?)
+        Ok(flexbuffers::to_vec(self)?)
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, DeserializeError> {

@@ -25,7 +25,7 @@ pub struct Category {
 
 impl Category {
     pub fn new(
-        id: Category,
+        id: CategoryId,
         name: CategoryName,
         products: BTreeSet<OrderingProduct>,
     ) -> Self {
@@ -46,7 +46,7 @@ impl Category {
 }
 
 impl Category {
-    pub fn id(&self) -> &Category {
+    pub fn id(&self) -> &CategoryId {
         &self.id
     }
 
