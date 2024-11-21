@@ -18,7 +18,7 @@ use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Category {
-    id: Category,
+    id: CategoryId,
     name: CategoryName,
     products: BTreeSet<OrderingProduct>,
 }
@@ -36,7 +36,7 @@ impl Category {
         }
     }
 
-    pub fn create(id: Category, name: CategoryName) -> Self {
+    pub fn create(id: CategoryId, name: CategoryName) -> Self {
         Self {
             id,
             name,

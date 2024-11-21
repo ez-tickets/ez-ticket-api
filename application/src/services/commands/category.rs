@@ -2,7 +2,7 @@ use crate::errors::ApplicationError;
 use error_stack::{Report, ResultExt};
 use kernel::commands::CategoryCommand;
 use kernel::entities::{
-    Category, Category, CategoryName, CategoryOrdering, OrderingProduct, ProductId,
+    Category, CategoryId, CategoryName, CategoryOrdering, OrderingProduct, ProductId,
 };
 use kernel::repositories::{CategoryRepository, DependOnCategoryRepository};
 
@@ -25,7 +25,7 @@ where
     ) -> Result<(), Report<ApplicationError>> {
         match cmd {
             CategoryCommand::Create { name, ordering } => {
-                let id = Category::default();
+                let id = CategoryId::default();
                 let name = CategoryName::new(name);
                 let ordering = CategoryOrdering::new(ordering);
                 let category = Category::create(id, name, ordering);
