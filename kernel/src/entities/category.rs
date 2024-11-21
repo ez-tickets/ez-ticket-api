@@ -8,78 +8,64 @@ pub use self::name::*;
 pub use self::ordering::*;
 pub use self::ordering_product::*;
 
+use crate::commands::CategoryCommand;
+use crate::events::CategoryEvent;
+use async_trait::async_trait;
 use destructure::{Destructure, Mutation};
+use nitinol::agent::{Context, Publisher};
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Category {
-    id: CategoryId,
+    id: Category,
     name: CategoryName,
-    ordering: CategoryOrdering,
     products: BTreeSet<OrderingProduct>,
 }
 
 impl Category {
     pub fn new(
-        id: CategoryId,
+        id: Category,
         name: CategoryName,
-        ordering: CategoryOrdering,
         products: BTreeSet<OrderingProduct>,
     ) -> Self {
         Self {
             id,
             name,
-            ordering,
             products,
         }
     }
 
-    pub fn create(id: CategoryId, name: CategoryName, ordering: CategoryOrdering) -> Self {
+    pub fn create(id: Category, name: CategoryName) -> Self {
         Self {
             id,
             name,
-            ordering,
             products: BTreeSet::new(),
         }
     }
 }
 
 impl Category {
-    pub fn id(&self) -> &CategoryId {
+    pub fn id(&self) -> &Category {
         &self.id
     }
 
     pub fn name(&self) -> &CategoryName {
         &self.name
     }
-
-    pub fn ordering(&self) -> &CategoryOrdering {
-        &self.ordering
-    }
-
+    
     pub fn products(&self) -> &BTreeSet<OrderingProduct> {
         &self.products
     }
 }
 
-impl Ord for Category {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.ordering.cmp(&other.ordering)
-    }
-}
 
-impl PartialOrd<Self> for Category {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
+#[async_trait]
+impl Publisher<CategoryCommand> for Category {
+    type Event = CategoryEvent;
+    type Rejection = ();
 
-impl Eq for Category {}
-
-impl PartialEq<Self> for Category {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.ordering == other.ordering
+    async fn publish(&self, command: CategoryCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
+        todo!()
     }
 }

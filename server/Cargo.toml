@@ -20,6 +20,8 @@ tracing-appender = "=0.2"
 thiserror = { workspace = true }
 error-stack = { workspace = true }
 
+nitinol = { workspace = true, features = ["protocol"] }
+
 application = { path = "../application" }
 driver = { path = "../driver" }
 kernel = { path = "../kernel" }

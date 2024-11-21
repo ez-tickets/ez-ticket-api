@@ -1,3 +1,4 @@
+use nitinol::Command;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -25,3 +26,5 @@ pub enum ProductCommand {
     },
     Delete,
 }
+
+impl Command for ProductCommand {}
