@@ -23,7 +23,10 @@ impl ProductOption {
 
     pub fn add(&mut self, option: OptionId) -> Result<(), Report<KernelError>> {
         if !self.options.insert(option) {
-            return Err(Report::new(KernelError::AlreadyExists));
+            return Err(Report::new(KernelError::AlreadyExists {
+                entity: "Option",
+                id: option.to_string(),
+            }));
         }
         Ok(())
     }
