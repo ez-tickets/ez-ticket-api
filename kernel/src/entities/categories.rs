@@ -1,12 +1,15 @@
 use crate::commands::CategoriesCommand;
 use crate::entities::CategoryId;
+use crate::errors::KernelError;
 use crate::events::CategoriesEvent;
-use nitinol::agent::{Applicator, Context, Publisher};
+use async_trait::async_trait;
+use error_stack::Report;
+use nitinol::process::{Applicator, Context, Process, Publisher};
+use nitinol::projection::Projection;
+use nitinol::resolver::{Mapper, ResolveMapping};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::convert::Infallible;
-use async_trait::async_trait;
-use nitinol::projection::Projection;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Categories {
@@ -25,10 +28,18 @@ impl AsRef<BTreeMap<i32, CategoryId>> for Categories {
     }
 }
 
+impl ResolveMapping for Categories {
+    fn mapping(mapper: &mut Mapper<Self>) {
+        mapper.register::<CategoriesEvent>();
+    }
+}
+
+impl Process for Categories {}
+
 #[async_trait]
 impl Publisher<CategoriesCommand> for Categories {
     type Event = CategoriesEvent;
-    type Rejection = ();
+    type Rejection = Report<KernelError>;
 
     async fn publish(&self, command: CategoriesCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
@@ -40,13 +51,19 @@ impl Publisher<CategoriesCommand> for Categories {
             }
             CategoriesCommand::Add { id } => {
                 if self.ordering.iter().any(|(_, v)| v == &id) {
-                    return Err(());
+                    return Err(Report::new(KernelError::AlreadyExists {
+                        entity: "Categories",
+                        id: id.to_string(),
+                    }));
                 }
                 CategoriesEvent::Added { id }
             }
             CategoriesCommand::Remove { id } => {
                 if self.ordering.iter().any(|(_, v)| v != &id) {
-                    return Err(());
+                    return Err(Report::new(KernelError::NotFound {
+                        entity: "Categories",
+                        id: id.to_string(),
+                    }));
                 }
                 CategoriesEvent::Removed { id }
             }

@@ -1,15 +1,16 @@
+use crate::entities::{CategoryId, CategoryName, ProductId};
 use nitinol::Command;
 use std::collections::BTreeMap;
 use uuid::Uuid;
-use crate::entities::CategoryId;
 
 #[derive(Debug, Clone)]
 pub enum CategoryCommand {
-    Create { name: String, ordering: i32 },
+    Create { name: CategoryName },
     UpdateName { name: String },
-    UpdateOrdering { ordering: i32 },
     Delete,
-    AddProduct { ordered: i32, product_id: Uuid },
+    AddProduct { product_id: ProductId },
+    UpdateProductOrdering { ordering: BTreeMap<i32, ProductId> },
+    RemoveProduct { product_id: ProductId }
 }
 
 

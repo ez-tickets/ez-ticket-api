@@ -1,33 +1,34 @@
 mod id;
 mod name;
-mod ordering;
-mod ordering_product;
 
 pub use self::id::*;
 pub use self::name::*;
-pub use self::ordering::*;
-pub use self::ordering_product::*;
 
 use crate::commands::CategoryCommand;
+use crate::entities::ProductId;
+use crate::errors::KernelError;
 use crate::events::CategoryEvent;
 use async_trait::async_trait;
 use destructure::{Destructure, Mutation};
-use nitinol::agent::{Context, Publisher};
+use error_stack::Report;
+use nitinol::process::{Applicator, Context, Process, ProcessContext, Publisher};
+use nitinol::projection::Projection;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, HashSet};
+use nitinol::resolver::{Mapper, ResolveMapping};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Category {
     id: CategoryId,
     name: CategoryName,
-    products: BTreeSet<OrderingProduct>,
+    products: BTreeMap<i32, ProductId>,
 }
 
 impl Category {
     pub fn new(
         id: CategoryId,
         name: CategoryName,
-        products: BTreeSet<OrderingProduct>,
+        products: BTreeMap<i32, ProductId>,
     ) -> Self {
         Self {
             id,
@@ -40,7 +41,7 @@ impl Category {
         Self {
             id,
             name,
-            products: BTreeSet::new(),
+            products: BTreeMap::new(),
         }
     }
 }
@@ -54,18 +55,134 @@ impl Category {
         &self.name
     }
     
-    pub fn products(&self) -> &BTreeSet<OrderingProduct> {
+    pub fn products(&self) -> &BTreeMap<i32, ProductId> {
         &self.products
     }
 }
 
+impl ResolveMapping for Category {
+    fn mapping(mapper: &mut Mapper<Self>) {
+        mapper.register::<CategoryEvent>();
+    }
+}
+
+impl Process for Category {}
 
 #[async_trait]
 impl Publisher<CategoryCommand> for Category {
     type Event = CategoryEvent;
-    type Rejection = ();
+    type Rejection = Report<KernelError>;
 
     async fn publish(&self, command: CategoryCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
-        todo!()
+        let ev = match command {
+            CategoryCommand::Create { name } => {
+                CategoryEvent::Created { id: self.id, name }
+            }
+            CategoryCommand::UpdateName { name } => {
+                let name = CategoryName::new(name);
+                CategoryEvent::UpdatedName { name }
+            }
+            CategoryCommand::Delete => {
+                CategoryEvent::Deleted
+            }
+            CategoryCommand::AddProduct { product_id } => {
+                if self.products().values().any(|exist| exist.eq(&product_id)) {
+                    return Err(Report::new(KernelError::AlreadyExists {
+                        entity: "Category",
+                        id: product_id.to_string(),
+                    }));
+                }
+                CategoryEvent::AddedProduct { product_id }
+            }
+            CategoryCommand::UpdateProductOrdering { ordering } => {
+                let old = self.products()
+                    .values()
+                    .copied()
+                    .collect::<HashSet<ProductId>>();
+                let new = ordering
+                    .values()
+                    .copied()
+                    .collect::<HashSet<ProductId>>();
+                let diff = &old ^ &new;
+
+                if !diff.is_empty() {
+                    return Err(Report::new(KernelError::Invalid))
+                }
+
+                CategoryEvent::UpdatedProductOrdering { ordering }
+            }
+            CategoryCommand::RemoveProduct { product_id } => {
+                if self.products().values().any(|exist| exist.ne(&product_id)) {
+                    return Err(Report::new(KernelError::NotFound {
+                        entity: "Category",
+                        id: product_id.to_string(),
+                    }));
+                }
+                CategoryEvent::RemovedProduct { product_id }
+            }
+        };
+        Ok(ev)
+    }
+}
+
+#[async_trait]
+impl Applicator<CategoryEvent> for Category {
+    async fn apply(&mut self, event: CategoryEvent, ctx: &mut Context) {
+        match event {
+            CategoryEvent::Created { id, name } => {
+                self.id = id;
+                self.name = name;
+            }
+            CategoryEvent::UpdatedName { name } => {
+                self.name = name;
+            }
+            CategoryEvent::Deleted => {
+                ctx.poison_pill();
+            }
+            CategoryEvent::AddedProduct { product_id } => {
+                self.products.insert((self.products().len() + 1) as i32, product_id);
+            }
+            CategoryEvent::UpdatedProductOrdering { ordering } => {
+                self.products = ordering;
+            }
+            CategoryEvent::RemovedProduct { product_id } => {
+                self.products.retain(|_, exist| exist == &product_id);
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl Projection<CategoryEvent> for Category {
+    type Rejection = KernelError;
+
+    async fn first(event: CategoryEvent) -> Result<Self, Self::Rejection> {
+        let CategoryEvent::Created { id, name } = event else { 
+            return Err(KernelError::Invalid)
+        };
+        
+        Ok(Self::create(id, name))
+    }
+
+    async fn apply(&mut self, event: CategoryEvent) -> Result<(), Self::Rejection> {
+        match event {
+            CategoryEvent::UpdatedName { name } => {
+                self.name = name;
+            }
+            CategoryEvent::Deleted => {
+                return Err(KernelError::Invalid)
+            }
+            CategoryEvent::AddedProduct { product_id } => {
+                self.products.insert((self.products().len() + 1) as i32, product_id);
+            }
+            CategoryEvent::UpdatedProductOrdering { ordering } => {
+                self.products = ordering;
+            }
+            CategoryEvent::RemovedProduct { product_id } => {
+                self.products.retain(|_, exist| exist == &product_id);
+            }
+            _ => return Ok(())
+        }
+        Ok(())
     }
 }

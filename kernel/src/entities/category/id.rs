@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -25,5 +26,11 @@ impl From<CategoryId> for Uuid {
 impl Default for CategoryId {
     fn default() -> Self {
         Self(Uuid::new_v4())
+    }
+}
+
+impl Display for CategoryId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "CategoryId({})", self.0)
     }
 }
