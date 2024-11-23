@@ -1,7 +1,7 @@
+use crate::entities::{Price, ProductDescription, ProductId, ProductName};
 use nitinol::errors::{DeserializeError, SerializeError};
 use nitinol::Event;
 use serde::{Deserialize, Serialize};
-use crate::entities::{Price, ProductDescription, ProductId, ProductName, Stock};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ProductEvent {
