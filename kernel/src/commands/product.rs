@@ -1,13 +1,13 @@
 use nitinol::Command;
 use serde::{Deserialize, Serialize};
+use crate::entities::{Price, ProductDescription, ProductName};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ProductCommand {
-    Register {
-        name: String,
-        desc: String,
-        price: i32,
-        stock: i32,
+    Create {
+        name: ProductName,
+        desc: ProductDescription,
+        price: Price,
     },
     UpdateName {
         name: String,
