@@ -1,3 +1,7 @@
+mod option_id;
+
+pub use option_id::*;
+
 use crate::entities::ProductId;
 use crate::errors::KernelError;
 use destructure::{Destructure, Mutation};
