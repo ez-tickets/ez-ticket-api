@@ -8,7 +8,6 @@ use destructure::{Destructure, Mutation};
 use error_stack::Report;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use uuid::Uuid;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct ProductOption {
@@ -42,41 +41,3 @@ impl ProductOption {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
-pub struct OptionId(Uuid);
-
-impl OptionId {
-    pub fn new(id: impl Into<Uuid>) -> OptionId {
-        Self(id.into())
-    }
-}
-
-impl AsRef<Uuid> for OptionId {
-    fn as_ref(&self) -> &Uuid {
-        &self.0
-    }
-}
-
-impl From<OptionId> for Uuid {
-    fn from(value: OptionId) -> Self {
-        value.0
-    }
-}
-
-impl From<OptionId> for ProductId {
-    fn from(value: OptionId) -> Self {
-        ProductId::new(value.0)
-    }
-}
-
-impl From<ProductId> for OptionId {
-    fn from(value: ProductId) -> Self {
-        OptionId::new(value)
-    }
-}
-
-impl Default for OptionId {
-    fn default() -> Self {
-        Self(Uuid::new_v4())
-    }
-}
