@@ -8,11 +8,11 @@ impl Stock {
         Self(stock.into())
     }
 
-    pub fn in_stock(&mut self, stock: impl Into<i32>) {
+    pub fn stock_in(&mut self, stock: impl Into<i32>) {
         self.0 += stock.into();
     }
 
-    pub fn bring_out(&mut self, out: impl Into<i32>) {
+    pub fn stock_out(&mut self, out: impl Into<i32>) {
         self.0 -= out.into();
     }
 }
