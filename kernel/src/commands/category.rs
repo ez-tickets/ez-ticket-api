@@ -32,7 +32,7 @@ pub enum CategoriesCommand {
         id: CategoryId
     },
     Update {
-        new: BTreeMap<i32, Uuid>
+        new: BTreeMap<i32, CategoryId>
     }
 }
 
