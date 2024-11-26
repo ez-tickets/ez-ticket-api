@@ -21,5 +21,6 @@ pub async fn init_sqlite(url: &str) -> Result<Pool<Sqlite>, Report<DriverError>>
 }
 
 pub async fn setup_eventstore(pool: &Pool<Sqlite>) -> Result<SqliteEventStore, Report<DriverError>> {
-    Ok(SqliteEventStore::setup(pool.clone()))
+    SqliteEventStore::setup(pool.clone()).await
+        .change_context_lazy(|| DriverError::SetupEventStore)
 }

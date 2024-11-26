@@ -80,10 +80,10 @@ impl Publisher<CategoryCommand> for Category {
             }
             CategoryCommand::UpdateName { name } => {
                 let name = CategoryName::new(name);
-                CategoryEvent::UpdatedName { name }
+                CategoryEvent::UpdatedName { id: self.id, name }
             }
             CategoryCommand::Delete => {
-                CategoryEvent::Deleted
+                CategoryEvent::Deleted { id: self.id }
             }
             CategoryCommand::AddProduct { product_id } => {
                 if self.products().values().any(|exist| exist.eq(&product_id)) {
@@ -92,7 +92,11 @@ impl Publisher<CategoryCommand> for Category {
                         id: product_id.to_string(),
                     }));
                 }
-                CategoryEvent::AddedProduct { product_id }
+                CategoryEvent::AddedProduct { 
+                    id: self.id,
+                    product: product_id, 
+                    ordering: self.products().len() as i32 + 1 
+                }
             }
             CategoryCommand::UpdateProductOrdering { ordering } => {
                 let old = self.products()
@@ -109,16 +113,16 @@ impl Publisher<CategoryCommand> for Category {
                     return Err(Report::new(KernelError::Invalid))
                 }
 
-                CategoryEvent::UpdatedProductOrdering { ordering }
+                CategoryEvent::UpdatedProductOrdering { id: self.id, ordering }
             }
-            CategoryCommand::RemoveProduct { product_id } => {
-                if self.products().values().any(|exist| exist.ne(&product_id)) {
+            CategoryCommand::RemoveProduct { product } => {
+                if self.products().values().any(|exist| exist.ne(&product)) {
                     return Err(Report::new(KernelError::NotFound {
                         entity: "Category",
-                        id: product_id.to_string(),
+                        id: product.to_string(),
                     }));
                 }
-                CategoryEvent::RemovedProduct { product_id }
+                CategoryEvent::RemovedProduct { id: self.id, product }
             }
         };
         Ok(ev)
@@ -133,19 +137,19 @@ impl Applicator<CategoryEvent> for Category {
                 self.id = id;
                 self.name = name;
             }
-            CategoryEvent::UpdatedName { name } => {
+            CategoryEvent::UpdatedName { name, .. } => {
                 self.name = name;
             }
-            CategoryEvent::Deleted => {
+            CategoryEvent::Deleted { .. } => {
                 ctx.poison_pill();
             }
-            CategoryEvent::AddedProduct { product_id } => {
-                self.products.insert((self.products().len() + 1) as i32, product_id);
+            CategoryEvent::AddedProduct { product, ordering, .. } => {
+                self.products.insert(ordering, product);
             }
-            CategoryEvent::UpdatedProductOrdering { ordering } => {
+            CategoryEvent::UpdatedProductOrdering { ordering, .. } => {
                 self.products = ordering;
             }
-            CategoryEvent::RemovedProduct { product_id } => {
+            CategoryEvent::RemovedProduct { product: product_id, .. } => {
                 self.products.retain(|_, exist| exist == &product_id);
             }
         }
@@ -166,20 +170,20 @@ impl Projection<CategoryEvent> for Category {
 
     async fn apply(&mut self, event: CategoryEvent) -> Result<(), Self::Rejection> {
         match event {
-            CategoryEvent::UpdatedName { name } => {
+            CategoryEvent::UpdatedName { name, .. } => {
                 self.name = name;
             }
-            CategoryEvent::Deleted => {
+            CategoryEvent::Deleted { .. } => {
                 return Err(KernelError::Invalid)
             }
-            CategoryEvent::AddedProduct { product_id } => {
-                self.products.insert((self.products().len() + 1) as i32, product_id);
+            CategoryEvent::AddedProduct { product, ordering, .. } => {
+                self.products.insert(ordering, product);
             }
-            CategoryEvent::UpdatedProductOrdering { ordering } => {
+            CategoryEvent::UpdatedProductOrdering { ordering, .. } => {
                 self.products = ordering;
             }
-            CategoryEvent::RemovedProduct { product_id } => {
-                self.products.retain(|_, exist| exist == &product_id);
+            CategoryEvent::RemovedProduct { product, .. } => {
+                self.products.retain(|_, exist| exist == &product);
             }
             _ => return Ok(())
         }

@@ -6,4 +6,8 @@ pub enum ApplicationError {
     Require { data: &'static str },
     #[error("An error occurred in an driver service.")]
     Driver,
+    #[error("An error occurred at the Kernel layer.")]
+    Kernel,
+    #[error("WTF")]
+    Other,
 }

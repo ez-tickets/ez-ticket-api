@@ -4,4 +4,6 @@ pub enum DriverError {
     Connection(String),
     #[error("Failure migration database")]
     Migration,
+    #[error("Cannot setup event store")]
+    SetupEventStore,
 }

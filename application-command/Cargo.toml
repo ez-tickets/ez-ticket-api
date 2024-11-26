@@ -1,5 +1,5 @@
 [package]
-name = "application"
+name = "application-command"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -9,7 +9,7 @@ license = { workspace = true }
 
 [dependencies]
 kernel = { path = "../kernel" }
-
+nitinol = { workspace = true, features = ["process", "protocol", "projection"] }
 thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }

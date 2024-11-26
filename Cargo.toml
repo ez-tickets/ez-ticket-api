@@ -1,6 +1,7 @@
 [workspace]
 members = [
-  "application",
+  "application-command",
+  "application-query",
   "driver",
   "kernel",
   "server"
@@ -18,4 +19,4 @@ thiserror = "^2"
 error-stack = "^0.5"
 async-trait = "^0.1"
 
-nitinol = { git = "https://github.com/HalsekiRaika/nitinol", rev = "8fefa7c" }
+nitinol = { git = "https://github.com/HalsekiRaika/nitinol", rev = "0f024b7" }

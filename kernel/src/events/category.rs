@@ -11,17 +11,24 @@ pub enum CategoryEvent {
         name: CategoryName,
     },
     UpdatedName {
+        id: CategoryId,
         name: CategoryName,
     },
-    Deleted,
+    Deleted {
+        id: CategoryId,
+    },
     AddedProduct {
-        product_id: ProductId,
+        id: CategoryId,
+        ordering: i32,
+        product: ProductId,
     },
     UpdatedProductOrdering {
+        id: CategoryId,
         ordering: BTreeMap<i32, ProductId>,
     },
     RemovedProduct {
-        product_id: ProductId
+        id: CategoryId,
+        product: ProductId
     }
 }
 
@@ -39,7 +46,7 @@ impl Event for CategoryEvent {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum CategoriesEvent {
-    Added { id: CategoryId },
+    Added { id: CategoryId, ordering: i32 },
     Removed { id: CategoryId },
     Updated { new: BTreeMap<i32, CategoryId> }
 }

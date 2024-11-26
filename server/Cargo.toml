@@ -22,6 +22,6 @@ error-stack = { workspace = true }
 
 nitinol = { workspace = true, features = ["protocol"] }
 
-application = { path = "../application" }
+application-command = { path = "../application-command" }
 driver = { path = "../driver" }
 kernel = { path = "../kernel" }

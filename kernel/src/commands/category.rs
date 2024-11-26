@@ -1,7 +1,6 @@
 use crate::entities::{CategoryId, CategoryName, ProductId};
 use nitinol::Command;
 use std::collections::BTreeMap;
-use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub enum CategoryCommand {
@@ -10,18 +9,11 @@ pub enum CategoryCommand {
     Delete,
     AddProduct { product_id: ProductId },
     UpdateProductOrdering { ordering: BTreeMap<i32, ProductId> },
-    RemoveProduct { product_id: ProductId }
+    RemoveProduct { product: ProductId }
 }
 
 
 impl Command for CategoryCommand {}
-
-#[derive(Debug, Clone)]
-pub struct UpdateCategoryOrderingCommand {
-    pub new: BTreeMap<i32, Uuid>
-}
-
-impl Command for UpdateCategoryOrderingCommand {}
 
 #[derive(Debug, Clone)]
 pub enum CategoriesCommand {

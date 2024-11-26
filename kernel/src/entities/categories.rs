@@ -56,7 +56,7 @@ impl Publisher<CategoriesCommand> for Categories {
                         id: id.to_string(),
                     }));
                 }
-                CategoriesEvent::Added { id }
+                CategoriesEvent::Added { id, ordering: self.ordering.len() as i32 + 1 }
             }
             CategoriesCommand::Remove { id } => {
                 if self.ordering.iter().any(|(_, v)| v != &id) {
@@ -88,8 +88,8 @@ impl Projection<CategoriesEvent> for Categories {
             CategoriesEvent::Updated { new } => {
                 self.ordering = new;
             }
-            CategoriesEvent::Added { id } => {
-                self.ordering.insert(self.ordering.len() as i32, id);
+            CategoriesEvent::Added { id, ordering } => {
+                self.ordering.insert(ordering, id);
             }
             CategoriesEvent::Removed { id } => {
                 self.ordering.retain(|_, v| v != &id);

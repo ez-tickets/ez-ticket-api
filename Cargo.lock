@@ -57,13 +57,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86fdf8605db99b54d3cd748a44c6d04df638eb5dafb219b135d0149bd0db01f6"
 
 [[package]]
-name = "application"
+name = "application-command"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "error-stack",
  "kernel",
+ "nitinol",
  "thiserror 2.0.3",
+]
+
+[[package]]
+name = "application-query"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "error-stack",
+ "kernel",
+ "nitinol",
+ "serde",
+ "sqlx",
+ "thiserror 2.0.3",
+ "uuid",
 ]
 
 [[package]]
@@ -485,7 +500,7 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 name = "driver"
 version = "0.1.0"
 dependencies = [
- "application",
+ "application-query",
  "async-trait",
  "error-stack",
  "kernel",
@@ -1203,7 +1218,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 [[package]]
 name = "nitinol"
 version = "0.2.0-alpha"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=8fefa7c#8fefa7cdac44772d4634b62d32721f12b2112d57"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
 dependencies = [
  "nitinol-core",
  "nitinol-process",
@@ -1214,7 +1229,7 @@ dependencies = [
 [[package]]
 name = "nitinol-core"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=8fefa7c#8fefa7cdac44772d4634b62d32721f12b2112d57"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
 dependencies = [
  "async-trait",
  "futures-util",
@@ -1225,7 +1240,7 @@ dependencies = [
 [[package]]
 name = "nitinol-process"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=8fefa7c#8fefa7cdac44772d4634b62d32721f12b2112d57"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
 dependencies = [
  "async-trait",
  "nitinol-core",
@@ -1237,7 +1252,7 @@ dependencies = [
 [[package]]
 name = "nitinol-projection"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=8fefa7c#8fefa7cdac44772d4634b62d32721f12b2112d57"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
 dependencies = [
  "nitinol-core",
  "nitinol-protocol",
@@ -1247,7 +1262,7 @@ dependencies = [
 [[package]]
 name = "nitinol-protocol"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=8fefa7c#8fefa7cdac44772d4634b62d32721f12b2112d57"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
 dependencies = [
  "async-trait",
  "nitinol-core",
@@ -1886,7 +1901,7 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
- "application",
+ "application-command",
  "axum",
  "driver",
  "error-stack",
@@ -2078,6 +2093,7 @@ dependencies = [
  "tokio-stream",
  "tracing",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -2158,6 +2174,7 @@ dependencies = [
  "stringprep",
  "thiserror 1.0.64",
  "tracing",
+ "uuid",
  "whoami",
 ]
 
@@ -2196,6 +2213,7 @@ dependencies = [
  "stringprep",
  "thiserror 1.0.64",
  "tracing",
+ "uuid",
  "whoami",
 ]
 
@@ -2220,6 +2238,7 @@ dependencies = [
  "sqlx-core",
  "tracing",
  "url",
+ "uuid",
 ]
 
 [[package]]

@@ -9,7 +9,7 @@ COPY Cargo.lock ./Cargo.lock
 COPY Cargo.toml ./Cargo.toml
 
 COPY migrations ./migrations
-COPY application ./application
+COPY application-command ./application
 COPY driver ./driver
 COPY kernel ./kernel
 COPY server ./server
