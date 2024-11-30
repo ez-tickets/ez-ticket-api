@@ -107,8 +107,8 @@ impl Publisher<ProductCommand> for Product {
 
     async fn publish(&self, command: ProductCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
-            ProductCommand::Create { name, desc, price, image } => {
-                ProductEvent::Created { id: self.id, name, desc, price, image }
+            ProductCommand::Create { name, desc, price } => {
+                ProductEvent::Created { id: self.id, name, desc, price }
             }
             ProductCommand::UpdateName { name } => {
                 let name = ProductName::new(name);

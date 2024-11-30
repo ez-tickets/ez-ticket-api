@@ -27,7 +27,7 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
         .nest("/order", order)
         .nest("/products", product)
         .nest("/categories", category)
-        .nest("/contents", )
+        .nest("/contents", content)
         .with_state(app);
 
     let listener = TcpListener::bind("0.0.0.0:3650")
