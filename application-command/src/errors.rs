@@ -8,6 +8,6 @@ pub enum ApplicationError {
     Driver,
     #[error("An error occurred at the Kernel layer.")]
     Kernel,
-    #[error("WTF")]
+    #[error("Something went wrong...?")]
     Other,
 }

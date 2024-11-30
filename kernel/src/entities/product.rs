@@ -15,9 +15,11 @@ use crate::errors::KernelError;
 use crate::events::ProductEvent;
 use async_trait::async_trait;
 use destructure::{Destructure, Mutation};
-use nitinol::process::{Applicator, Context, Process, ProcessContext, Publisher};
+use nitinol::process::{Applicator, Context, Process, Publisher};
+use nitinol::process::persistence::process::WithPersistence;
 use nitinol::projection::Projection;
 use nitinol::resolver::{Mapper, ResolveMapping};
+use nitinol::ToEntityId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
@@ -92,6 +94,12 @@ impl ResolveMapping for Product {
 
 impl Process for Product {}
 
+impl WithPersistence for Product {
+    fn aggregate_id(&self) -> impl ToEntityId {
+        self.id
+    }
+}
+
 #[async_trait]
 impl Publisher<ProductCommand> for Product {
     type Event = ProductEvent;
@@ -99,8 +107,8 @@ impl Publisher<ProductCommand> for Product {
 
     async fn publish(&self, command: ProductCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
-            ProductCommand::Create { name, desc, price } => {
-                ProductEvent::Created { id: self.id, name, desc, price }
+            ProductCommand::Create { name, desc, price, image } => {
+                ProductEvent::Created { id: self.id, name, desc, price, image }
             }
             ProductCommand::UpdateName { name } => {
                 let name = ProductName::new(name);
@@ -138,6 +146,7 @@ impl Publisher<ProductCommand> for Product {
 #[async_trait]
 impl Applicator<ProductEvent> for Product {
     async fn apply(&mut self, event: ProductEvent, ctx: &mut Context) {
+        self.persist(&event, ctx).await;
         match event {
             ProductEvent::UpdatedName { name } => {
                 self.name = name;
@@ -155,7 +164,7 @@ impl Applicator<ProductEvent> for Product {
                 self.price = price;
             }
             ProductEvent::Deleted => {
-                ctx.poison_pill();
+                ctx.poison_pill().await;
             }
             _ => {}
         }
@@ -167,7 +176,7 @@ impl Projection<ProductEvent> for Product {
     type Rejection = KernelError;
     
     async fn first(event: ProductEvent) -> Result<Self, Self::Rejection> {
-        let ProductEvent::Created { id, name, desc, price } = event else {
+        let ProductEvent::Created { id, name, desc, price,  } = event else {
             return Err(KernelError::Invalid)
         };
         

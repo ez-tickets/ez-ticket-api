@@ -65,6 +65,7 @@ dependencies = [
  "kernel",
  "nitinol",
  "thiserror 2.0.3",
+ "tracing",
 ]
 
 [[package]]
@@ -103,6 +104,18 @@ name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
+
+[[package]]
+name = "async-channel"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89b47800b0be77592da0afd425cc03468052844aff33b84e33cc696f64e77b6a"
+dependencies = [
+ "concurrent-queue",
+ "event-listener-strategy",
+ "futures-core",
+ "pin-project-lite",
+]
 
 [[package]]
 name = "async-trait"
@@ -576,6 +589,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "event-listener-strategy"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f214dc438f977e6d4e3500aaa277f5ad94ca83fbbd9b1a15713ce2344ccc5a1"
+dependencies = [
+ "event-listener",
+ "pin-project-lite",
+]
+
+[[package]]
 name = "exr"
 version = "1.73.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -699,6 +722,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e5c1b78ca4aae1ac06c48a526a655760685149f0d465d21f37abfe57ce075c6"
 
 [[package]]
+name = "futures-macro"
+version = "0.3.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "futures-sink"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -718,6 +752,7 @@ checksum = "9fa08315bb612088cc391249efdc3bc77536f16c91f6cf495e6fbe85b20a4a81"
 dependencies = [
  "futures-core",
  "futures-io",
+ "futures-macro",
  "futures-sink",
  "futures-task",
  "memchr",
@@ -1218,9 +1253,10 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 [[package]]
 name = "nitinol"
 version = "0.2.0-alpha"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
 dependencies = [
  "nitinol-core",
+ "nitinol-persistence",
  "nitinol-process",
  "nitinol-projection",
  "nitinol-protocol",
@@ -1229,7 +1265,7 @@ dependencies = [
 [[package]]
 name = "nitinol-core"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
 dependencies = [
  "async-trait",
  "futures-util",
@@ -1238,10 +1274,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitinol-persistence"
+version = "0.1.0"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
+dependencies = [
+ "async-trait",
+ "nitinol-core",
+ "nitinol-process",
+ "nitinol-protocol",
+ "tracing",
+]
+
+[[package]]
 name = "nitinol-process"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
 dependencies = [
+ "async-channel",
  "async-trait",
  "nitinol-core",
  "thiserror 2.0.3",
@@ -1252,7 +1301,7 @@ dependencies = [
 [[package]]
 name = "nitinol-projection"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
 dependencies = [
  "nitinol-core",
  "nitinol-protocol",
@@ -1262,12 +1311,14 @@ dependencies = [
 [[package]]
 name = "nitinol-protocol"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=0f024b7#0f024b7474de74ffd471173951700b75b44b3e62"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
 dependencies = [
  "async-trait",
+ "dotenvy",
  "nitinol-core",
  "sqlx",
  "thiserror 2.0.3",
+ "time",
  "tracing",
 ]
 
@@ -1902,12 +1953,17 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "application-command",
+ "application-query",
  "axum",
  "driver",
  "error-stack",
+ "futures-util",
  "image",
  "kernel",
+ "mime",
  "nitinol",
+ "serde",
+ "serde_json",
  "thiserror 2.0.3",
  "tokio",
  "tracing",
@@ -2089,6 +2145,7 @@ dependencies = [
  "smallvec",
  "sqlformat",
  "thiserror 1.0.64",
+ "time",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -2173,6 +2230,7 @@ dependencies = [
  "sqlx-core",
  "stringprep",
  "thiserror 1.0.64",
+ "time",
  "tracing",
  "uuid",
  "whoami",
@@ -2212,6 +2270,7 @@ dependencies = [
  "sqlx-core",
  "stringprep",
  "thiserror 1.0.64",
+ "time",
  "tracing",
  "uuid",
  "whoami",
@@ -2236,6 +2295,7 @@ dependencies = [
  "serde",
  "serde_urlencoded",
  "sqlx-core",
+ "time",
  "tracing",
  "url",
  "uuid",

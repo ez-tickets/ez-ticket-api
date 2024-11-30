@@ -10,6 +10,8 @@ use nitinol::resolver::{Mapper, ResolveMapping};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::convert::Infallible;
+use nitinol::process::persistence::process::WithPersistence;
+use nitinol::ToEntityId;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Categories {
@@ -17,6 +19,8 @@ pub struct Categories {
 }
 
 impl Categories {
+    pub const AGGREGATE_ID: &'static str = "categories";
+    
     pub fn new(ordering: BTreeMap<i32, CategoryId>) -> Categories {
         Self { ordering }
     }
@@ -35,6 +39,12 @@ impl ResolveMapping for Categories {
 }
 
 impl Process for Categories {}
+
+impl WithPersistence for Categories {
+    fn aggregate_id(&self) -> impl ToEntityId {
+        Self::AGGREGATE_ID
+    }
+}
 
 #[async_trait]
 impl Publisher<CategoriesCommand> for Categories {
@@ -74,7 +84,8 @@ impl Publisher<CategoriesCommand> for Categories {
 
 #[async_trait]
 impl Applicator<CategoriesEvent> for Categories {
-    async fn apply(&mut self, event: CategoriesEvent, _: &mut Context) {
+    async fn apply(&mut self, event: CategoriesEvent, ctx: &mut Context) {
+        self.persist(&event, ctx).await;
         Projection::apply(self, event).await.unwrap();
     }
 }

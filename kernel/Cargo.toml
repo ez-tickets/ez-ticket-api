@@ -10,7 +10,7 @@ license = { workspace = true }
 [dependencies]
 destructure = "0.5.6"
 
-nitinol = { workspace = true, features = ["process", "projection"] }
+nitinol = { workspace = true, features = ["process", "projection", "persistence"] }
 flexbuffers = "2.0.0"
 
 serde = { version = "=1", features = ["derive"] }

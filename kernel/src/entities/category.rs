@@ -11,11 +11,13 @@ use crate::events::CategoryEvent;
 use async_trait::async_trait;
 use destructure::{Destructure, Mutation};
 use error_stack::Report;
-use nitinol::process::{Applicator, Context, Process, ProcessContext, Publisher};
+use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashSet};
+use nitinol::process::persistence::process::WithPersistence;
 use nitinol::resolver::{Mapper, ResolveMapping};
+use nitinol::ToEntityId;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Category {
@@ -67,6 +69,12 @@ impl ResolveMapping for Category {
 }
 
 impl Process for Category {}
+
+impl WithPersistence for Category {
+    fn aggregate_id(&self) -> impl ToEntityId {
+        self.id
+    }
+}
 
 #[async_trait]
 impl Publisher<CategoryCommand> for Category {
@@ -132,6 +140,7 @@ impl Publisher<CategoryCommand> for Category {
 #[async_trait]
 impl Applicator<CategoryEvent> for Category {
     async fn apply(&mut self, event: CategoryEvent, ctx: &mut Context) {
+        self.persist(&event, ctx).await;
         match event {
             CategoryEvent::Created { id, name } => {
                 self.id = id;
@@ -141,7 +150,7 @@ impl Applicator<CategoryEvent> for Category {
                 self.name = name;
             }
             CategoryEvent::Deleted { .. } => {
-                ctx.poison_pill();
+                ctx.poison_pill().await;
             }
             CategoryEvent::AddedProduct { product, ordering, .. } => {
                 self.products.insert(ordering, product);

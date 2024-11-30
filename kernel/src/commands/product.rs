@@ -1,6 +1,6 @@
 use nitinol::Command;
 use serde::{Deserialize, Serialize};
-use crate::entities::{Price, ProductDescription, ProductName};
+use crate::entities::{ImageId, Price, ProductDescription, ProductName};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ProductCommand {

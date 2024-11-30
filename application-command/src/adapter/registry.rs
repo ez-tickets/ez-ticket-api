@@ -1,6 +1,5 @@
-use nitinol::process::registry::ProcessSystem;
+use nitinol::process::registry::Registry;
 
 pub trait DependOnProcessRegistry: 'static + Sync + Send {
-    type ProcessRegistry: ProcessSystem;
-    fn process_registry(&self) -> Self::ProcessRegistry;
+    fn process_registry(&self) -> Registry;
 }

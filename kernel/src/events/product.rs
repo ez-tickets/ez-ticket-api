@@ -1,4 +1,4 @@
-use crate::entities::{Price, ProductDescription, ProductId, ProductName};
+use crate::entities::{ImageId, Price, ProductDescription, ProductId, ProductName};
 use nitinol::errors::{DeserializeError, SerializeError};
 use nitinol::Event;
 use serde::{Deserialize, Serialize};

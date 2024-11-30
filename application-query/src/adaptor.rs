@@ -1,5 +1,5 @@
 use nitinol::projection::Projector;
 
-pub trait DependOnEventProjector: 'static + Sync + Send {
+pub trait DependOnEventQueryProjector: 'static + Sync + Send {
     fn projector(&self) -> &Projector;
 }

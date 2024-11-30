@@ -19,4 +19,4 @@ thiserror = "^2"
 error-stack = "^0.5"
 async-trait = "^0.1"
 
-nitinol = { git = "https://github.com/HalsekiRaika/nitinol", rev = "0f024b7" }
+nitinol = { git = "https://github.com/HalsekiRaika/nitinol", rev = "3b46ed1" }
