@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -19,6 +20,12 @@ impl AsRef<Uuid> for ImageId {
 impl From<ImageId> for Uuid {
     fn from(content: ImageId) -> Uuid {
         content.0
+    }
+}
+
+impl Display for ImageId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Image({})", self.0)
     }
 }
 
