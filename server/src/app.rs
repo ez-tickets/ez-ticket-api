@@ -27,7 +27,7 @@ use application_query::{
     models::DependOnCategoryQueryService
 };
 use application_query::models::DependOnProductQueryService;
-use driver::database::{init_sqlite, setup_eventstore};
+use driver::database::{init_sqlite, mkdir_if_none, setup_eventstore};
 use driver::repositories::ImageDataBase;
 use kernel::repositories::DependOnImageRepository;
 
@@ -61,6 +61,8 @@ pub struct Handler {
 
 impl AppModule {
     pub async fn setup() -> Result<AppModule, Report<UnrecoverableError>> {
+        mkdir_if_none().change_context_lazy(|| UnrecoverableError)?;
+        
         let pool = init_sqlite("sqlite://.database/level.db").await
             .change_context_lazy(|| UnrecoverableError)?;
         let event_store = setup_eventstore("sqlite://.database/journal.db").await

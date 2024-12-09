@@ -6,6 +6,14 @@ use sqlx::{Pool, Sqlite};
 use std::time::Duration;
 use nitinol::protocol::adapter::sqlite::SqliteEventStore;
 
+pub fn mkdir_if_none() -> Result<(), Report<DriverError>> {
+    if !std::fs::exists(".database").change_context_lazy(|| DriverError::Setup)? {
+        std::fs::create_dir(".database")
+            .map_err(|_| Report::new(DriverError::Setup))?;
+    }
+    Ok(())
+}
+
 pub async fn init_sqlite(url: &str) -> Result<Pool<Sqlite>, Report<DriverError>> {
     let opts = SqliteConnectOptions::from_str(url)
         .change_context_lazy(|| DriverError::Connection(url.to_string()))?

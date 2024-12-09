@@ -19,8 +19,3 @@ echo "SERVER_PORT=3650" >> .docker.env
 ```shell
 docker-compose up -d
 ```
-
-### Run Development Environment
-```shell
-docker-compose up -f docker-compose-dev.yml -d
-```

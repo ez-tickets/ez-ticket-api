@@ -1,4 +1,4 @@
-FROM rust@sha256:a21d54019c66e3a1e7512651e9a7de99b08f28d49b023ed7220b7fe4d3b9f24e AS build-stage
+FROM rust@sha256:62afc139057dc9d3eda02e490677911b55a208ba22d6f7315f3c5c5851e31a36 AS build-stage
 
 LABEL authors="RechellaTek"
 
@@ -9,7 +9,8 @@ COPY Cargo.lock ./Cargo.lock
 COPY Cargo.toml ./Cargo.toml
 
 COPY migrations ./migrations
-COPY application-command ./application
+COPY application-command ./application-command
+COPY application-query   ./application-query
 COPY driver ./driver
 COPY kernel ./kernel
 COPY server ./server

@@ -6,4 +6,6 @@ pub enum DriverError {
     Migration,
     #[error("Cannot setup event store")]
     SetupEventStore,
+    #[error("Cannot setup")]
+    Setup,
 }
