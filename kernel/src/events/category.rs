@@ -1,8 +1,10 @@
-use crate::entities::{CategoryId, CategoryName, ProductId};
+use std::collections::BTreeMap;
+
 use nitinol::errors::{DeserializeError, SerializeError};
 use nitinol::Event;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+
+use crate::entities::{CategoryId, CategoryName, CatalogId};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum CategoryEvent {
@@ -17,18 +19,18 @@ pub enum CategoryEvent {
     Deleted {
         id: CategoryId,
     },
-    AddedProduct {
+    AddedCatalog {
         id: CategoryId,
         ordering: i32,
-        product: ProductId,
+        catalog: CatalogId,
     },
-    UpdatedProductOrdering {
+    UpdatedCatalogOrdering {
         id: CategoryId,
-        ordering: BTreeMap<i32, ProductId>,
+        ordering: BTreeMap<i32, CatalogId>,
     },
-    RemovedProduct {
+    RemovedCatalog {
         id: CategoryId,
-        product: ProductId
+        catalog: CatalogId
     }
 }
 

@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::entities::{CatalogId, ProductId};
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct ImageId(Uuid);
@@ -29,8 +30,14 @@ impl Display for ImageId {
     }
 }
 
-impl Default for ImageId {
-    fn default() -> Self {
-        Self(Uuid::new_v4())
+impl From<ProductId> for ImageId {
+    fn from(id: ProductId) -> Self {
+        Self(id.into())
+    }
+}
+
+impl From<CatalogId> for ImageId {
+    fn from(id: CatalogId) -> Self {
+        Self(id.into())
     }
 }

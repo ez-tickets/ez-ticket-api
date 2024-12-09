@@ -1,14 +1,8 @@
-mod description;
 mod id;
 mod name;
-mod price;
-mod stock;
 
-pub use self::description::*;
 pub use self::id::*;
 pub use self::name::*;
-pub use self::price::*;
-pub use self::stock::*;
 
 use crate::commands::ProductCommand;
 use crate::errors::KernelError;
@@ -26,41 +20,11 @@ use serde::{Deserialize, Serialize};
 pub struct Product {
     id: ProductId,
     name: ProductName,
-    description: ProductDescription,
-    price: Price,
-    stock: Stock,
 }
 
 impl Product {
-    pub fn new(
-        id: ProductId,
-        name: ProductName,
-        description: ProductDescription,
-        stock: Stock,
-        price: Price,
-    ) -> Self {
-        Self {
-            id,
-            name,
-            description,
-            price,
-            stock,
-        }
-    }
-    
-    pub fn create(
-        id: ProductId, 
-        name: ProductName, 
-        description: ProductDescription, 
-        price: Price
-    ) -> Self {
-        Self {
-            id,
-            name,
-            description,
-            price,
-            stock: Stock::new(0),
-        }
+    pub fn new(id: ProductId, name: ProductName) -> Self {
+        Self { id, name, }
     }
 }
 
@@ -71,18 +35,6 @@ impl Product {
 
     pub fn name(&self) -> &ProductName {
         &self.name
-    }
-
-    pub fn description(&self) -> &ProductDescription {
-        &self.description
-    }
-
-    pub fn stock(&self) -> &Stock {
-        &self.stock
-    }
-
-    pub fn price(&self) -> &Price {
-        &self.price
     }
 }
 
@@ -107,36 +59,15 @@ impl Publisher<ProductCommand> for Product {
 
     async fn publish(&self, command: ProductCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
-            ProductCommand::Create { name, desc, price } => {
-                ProductEvent::Created { id: self.id, name, desc, price }
+            ProductCommand::Register { name } => {
+                ProductEvent::Created { id: self.id, name }
             }
             ProductCommand::UpdateName { name } => {
                 let name = ProductName::new(name);
-                ProductEvent::UpdatedName { name }
+                ProductEvent::UpdatedName { id: self.id, name }
             }
-            ProductCommand::UpdateDescription { desc } => {
-                let desc = ProductDescription::new(desc);
-                ProductEvent::UpdatedDescription { desc }
-            }
-            ProductCommand::StockIn { amount } => {
-                if (self.stock().as_ref() + amount) < 0 {
-                    return Err(KernelError::Invalid)
-                }
-                ProductEvent::StockedIn { amount }
-            }
-            ProductCommand::StockOut { amount } => {
-                if (self.stock().as_ref() - amount) < 0 {
-                    return Err(KernelError::Invalid)
-                }
-                ProductEvent::StockedOut { amount }
-            }
-            ProductCommand::UpdatePrice { price } => {
-                let price = Price::new(price);
-                ProductEvent::UpdatedPrice { price }
-            }
-            
             ProductCommand::Delete => {
-                ProductEvent::Deleted
+                ProductEvent::Deleted { id: self.id }
             }
         };
         Ok(ev)
@@ -148,22 +79,10 @@ impl Applicator<ProductEvent> for Product {
     async fn apply(&mut self, event: ProductEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
         match event {
-            ProductEvent::UpdatedName { name } => {
+            ProductEvent::UpdatedName { name, .. } => {
                 self.name = name;
             }
-            ProductEvent::UpdatedDescription { desc } => {
-                self.description = desc;
-            }
-            ProductEvent::StockedIn { amount } => {
-                self.stock.stock_in(amount);
-            }
-            ProductEvent::StockedOut { amount } => {
-                self.stock.stock_out(amount);
-            }
-            ProductEvent::UpdatedPrice { price } => {
-                self.price = price;
-            }
-            ProductEvent::Deleted => {
+            ProductEvent::Deleted { .. } => {
                 ctx.poison_pill().await;
             }
             _ => {}
@@ -176,31 +95,19 @@ impl Projection<ProductEvent> for Product {
     type Rejection = KernelError;
     
     async fn first(event: ProductEvent) -> Result<Self, Self::Rejection> {
-        let ProductEvent::Created { id, name, desc, price,  } = event else {
+        let ProductEvent::Created { id, name } = event else {
             return Err(KernelError::Invalid)
         };
         
-        Ok(Self::create(id, name, desc, price))
+        Ok(Self::new(id, name))
     }
     
     async fn apply(&mut self, event: ProductEvent) -> Result<(), Self::Rejection> {
         match event {
-            ProductEvent::UpdatedName { name } => {
+            ProductEvent::UpdatedName { name, .. } => {
                 self.name = name;
             }
-            ProductEvent::UpdatedDescription { desc } => {
-                self.description = desc;
-            }
-            ProductEvent::StockedIn { amount } => {
-                self.stock.stock_in(amount);
-            }
-            ProductEvent::StockedOut { amount } => {
-                self.stock.stock_out(amount);
-            }
-            ProductEvent::UpdatedPrice { price } => {
-                self.price = price;
-            }
-            ProductEvent::Deleted => {
+            ProductEvent::Deleted { .. } => {
                 return Err(KernelError::Invalid)
             }
             _ => return Ok(())

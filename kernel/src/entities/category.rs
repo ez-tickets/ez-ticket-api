@@ -5,7 +5,7 @@ pub use self::id::*;
 pub use self::name::*;
 
 use crate::commands::CategoryCommand;
-use crate::entities::ProductId;
+use crate::entities::CatalogId;
 use crate::errors::KernelError;
 use crate::events::CategoryEvent;
 use async_trait::async_trait;
@@ -23,19 +23,19 @@ use nitinol::ToEntityId;
 pub struct Category {
     id: CategoryId,
     name: CategoryName,
-    products: BTreeMap<i32, ProductId>,
+    catalogs: BTreeMap<i32, CatalogId>,
 }
 
 impl Category {
     pub fn new(
         id: CategoryId,
         name: CategoryName,
-        products: BTreeMap<i32, ProductId>,
+        catalogs: BTreeMap<i32, CatalogId>,
     ) -> Self {
         Self {
             id,
             name,
-            products,
+            catalogs,
         }
     }
 
@@ -43,7 +43,7 @@ impl Category {
         Self {
             id,
             name,
-            products: BTreeMap::new(),
+            catalogs: BTreeMap::new(),
         }
     }
 }
@@ -57,8 +57,8 @@ impl Category {
         &self.name
     }
     
-    pub fn products(&self) -> &BTreeMap<i32, ProductId> {
-        &self.products
+    pub fn products(&self) -> &BTreeMap<i32, CatalogId> {
+        &self.catalogs
     }
 }
 
@@ -93,44 +93,44 @@ impl Publisher<CategoryCommand> for Category {
             CategoryCommand::Delete => {
                 CategoryEvent::Deleted { id: self.id }
             }
-            CategoryCommand::AddProduct { product_id } => {
+            CategoryCommand::AddCatalog { catalog: product_id } => {
                 if self.products().values().any(|exist| exist.eq(&product_id)) {
                     return Err(Report::new(KernelError::AlreadyExists {
                         entity: "Category",
                         id: product_id.to_string(),
                     }));
                 }
-                CategoryEvent::AddedProduct { 
+                CategoryEvent::AddedCatalog { 
                     id: self.id,
-                    product: product_id, 
+                    catalog: product_id, 
                     ordering: self.products().len() as i32 + 1 
                 }
             }
-            CategoryCommand::UpdateProductOrdering { ordering } => {
+            CategoryCommand::UpdateCatalogOrdering { ordering } => {
                 let old = self.products()
                     .values()
                     .copied()
-                    .collect::<HashSet<ProductId>>();
+                    .collect::<HashSet<CatalogId>>();
                 let new = ordering
                     .values()
                     .copied()
-                    .collect::<HashSet<ProductId>>();
+                    .collect::<HashSet<CatalogId>>();
                 let diff = &old ^ &new;
 
                 if !diff.is_empty() {
                     return Err(Report::new(KernelError::Invalid))
                 }
 
-                CategoryEvent::UpdatedProductOrdering { id: self.id, ordering }
+                CategoryEvent::UpdatedCatalogOrdering { id: self.id, ordering }
             }
-            CategoryCommand::RemoveProduct { product } => {
+            CategoryCommand::RemoveCatalog { catalog: product } => {
                 if self.products().values().any(|exist| exist.ne(&product)) {
                     return Err(Report::new(KernelError::NotFound {
                         entity: "Category",
                         id: product.to_string(),
                     }));
                 }
-                CategoryEvent::RemovedProduct { id: self.id, product }
+                CategoryEvent::RemovedCatalog { id: self.id, catalog: product }
             }
         };
         Ok(ev)
@@ -152,14 +152,14 @@ impl Applicator<CategoryEvent> for Category {
             CategoryEvent::Deleted { .. } => {
                 ctx.poison_pill().await;
             }
-            CategoryEvent::AddedProduct { product, ordering, .. } => {
-                self.products.insert(ordering, product);
+            CategoryEvent::AddedCatalog { catalog: product, ordering, .. } => {
+                self.catalogs.insert(ordering, product);
             }
-            CategoryEvent::UpdatedProductOrdering { ordering, .. } => {
-                self.products = ordering;
+            CategoryEvent::UpdatedCatalogOrdering { ordering, .. } => {
+                self.catalogs = ordering;
             }
-            CategoryEvent::RemovedProduct { product: product_id, .. } => {
-                self.products.retain(|_, exist| exist == &product_id);
+            CategoryEvent::RemovedCatalog { catalog: product_id, .. } => {
+                self.catalogs.retain(|_, exist| exist == &product_id);
             }
         }
     }
@@ -185,14 +185,14 @@ impl Projection<CategoryEvent> for Category {
             CategoryEvent::Deleted { .. } => {
                 return Err(KernelError::Invalid)
             }
-            CategoryEvent::AddedProduct { product, ordering, .. } => {
-                self.products.insert(ordering, product);
+            CategoryEvent::AddedCatalog { catalog: product, ordering, .. } => {
+                self.catalogs.insert(ordering, product);
             }
-            CategoryEvent::UpdatedProductOrdering { ordering, .. } => {
-                self.products = ordering;
+            CategoryEvent::UpdatedCatalogOrdering { ordering, .. } => {
+                self.catalogs = ordering;
             }
-            CategoryEvent::RemovedProduct { product, .. } => {
-                self.products.retain(|_, exist| exist == &product);
+            CategoryEvent::RemovedCatalog { catalog: product, .. } => {
+                self.catalogs.retain(|_, exist| exist == &product);
             }
             _ => return Ok(())
         }

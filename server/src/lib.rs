@@ -1,7 +1,7 @@
 pub mod errors;
 pub mod logging;
 pub mod routing;
-mod inject;
+mod app;
 
 
-pub use self::inject::*;
+pub use self::app::*;

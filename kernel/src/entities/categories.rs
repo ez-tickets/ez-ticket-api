@@ -8,7 +8,7 @@ use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
 use nitinol::resolver::{Mapper, ResolveMapping};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::convert::Infallible;
 use nitinol::process::persistence::process::WithPersistence;
 use nitinol::ToEntityId;
@@ -54,9 +54,22 @@ impl Publisher<CategoriesCommand> for Categories {
     async fn publish(&self, command: CategoriesCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
             CategoriesCommand::Update { new } => {
-                let new = new.into_iter()
-                    .map(|(order, id)| (order, CategoryId::new(id)))
-                    .collect::<BTreeMap<i32, CategoryId>>();
+                let older = self.ordering
+                    .values()
+                    .copied()
+                    .collect::<HashSet<CategoryId>>();
+                let newer = new
+                    .values()
+                    .copied()
+                    .collect::<HashSet<CategoryId>>();
+                
+                let diff = &older ^ &newer;
+                
+                if !diff.is_empty() {
+                    return Err(Report::new(KernelError::Invalid)
+                        .attach_printable("Order changes do not accept addition/deletion of content elements."));
+                }
+                
                 CategoriesEvent::Updated { new }
             }
             CategoriesCommand::Add { id } => {
@@ -69,7 +82,7 @@ impl Publisher<CategoriesCommand> for Categories {
                 CategoriesEvent::Added { id, ordering: self.ordering.len() as i32 + 1 }
             }
             CategoriesCommand::Remove { id } => {
-                if self.ordering.iter().any(|(_, v)| v != &id) {
+                if !self.ordering.iter().any(|(_, v)| v == &id) {
                     return Err(Report::new(KernelError::NotFound {
                         entity: "Categories",
                         id: id.to_string(),

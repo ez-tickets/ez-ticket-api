@@ -1,7 +1,7 @@
-use std::fmt::{Display, Formatter};
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use crate::entities::ProductId;
+use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
+use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub struct OptionId(Uuid);
@@ -26,19 +26,13 @@ impl From<OptionId> for Uuid {
 
 impl From<OptionId> for ProductId {
     fn from(value: OptionId) -> Self {
-        ProductId::new(value.0)
+        ProductId::new(value)
     }
 }
 
 impl From<ProductId> for OptionId {
     fn from(value: ProductId) -> Self {
         OptionId::new(value)
-    }
-}
-
-impl Default for OptionId {
-    fn default() -> Self {
-        Self(Uuid::new_v4())
     }
 }
 

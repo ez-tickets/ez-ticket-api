@@ -11,7 +11,7 @@ pub fn init() {
         .with(
             tracing_subscriber::fmt::layer()
                 .with_filter(EnvFilter::new(std::env::var("RUST_LOG").unwrap_or_else(
-                    |_| "driver=debug,server=debug,kernel=trace,application=debug".into(),
+                    |_| "RUST_LOG=trace".into(),
                 )))
                 .with_filter(LevelFilter::TRACE),
         )

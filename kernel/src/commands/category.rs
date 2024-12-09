@@ -1,4 +1,4 @@
-use crate::entities::{CategoryId, CategoryName, ProductId};
+use crate::entities::{CategoryId, CategoryName, CatalogId};
 use nitinol::Command;
 use std::collections::BTreeMap;
 use error_stack::Report;
@@ -10,9 +10,9 @@ pub enum CategoryCommand {
     Create { name: CategoryName },
     UpdateName { name: String },
     Delete,
-    AddProduct { product_id: ProductId },
-    UpdateProductOrdering { ordering: BTreeMap<i32, ProductId> },
-    RemoveProduct { product: ProductId }
+    AddCatalog { catalog: CatalogId },
+    UpdateCatalogOrdering { ordering: BTreeMap<i32, CatalogId> },
+    RemoveCatalog { catalog: CatalogId }
 }
 
 

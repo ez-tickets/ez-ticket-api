@@ -1,17 +1,36 @@
+use std::sync::Arc;
 use std::ops::Deref;
-use crate::errors::UnrecoverableError;
-use driver::database::{init_sqlite, setup_eventstore};
+
 use error_stack::{Report, ResultExt};
 use nitinol::process::extension::Extensions as ProcessExtension;
 use nitinol::process::persistence::extension::PersistenceExtension;
 use nitinol::process::registry::Registry as ProcessRegistry;
-use std::sync::Arc;
 use nitinol::projection::Projector as EventProjector;
 use nitinol::protocol::io::ReadProtocol;
-use application_command::adapter::{DependOnEventProjector, DependOnProcessExtension, DependOnProcessRegistry};
-use application_command::services::commands::{DependOnCategoriesCommandExecutor, DependOnCategoryCommandExecutor, DependOnProductCommandExecutor};
-use application_query::adaptor::DependOnEventQueryProjector;
-use application_query::models::DependOnCategoryQueryService;
+use application_command::{
+    adapter::{
+        DependOnEventProjector,
+        DependOnProcessExtension,
+        DependOnProcessRegistry
+    },
+    services::commands::{
+        DependOnCategoriesCommandExecutor,
+        DependOnCategoryCommandExecutor,
+        DependOnProductCommandExecutor,
+        DependOnProductRegisterService
+    },
+    services::content::DependOnContentRegisterService
+};
+use application_query::{
+    adaptor::DependOnEventQueryProjector,
+    models::DependOnCategoryQueryService
+};
+use application_query::models::DependOnProductQueryService;
+use driver::database::{init_sqlite, setup_eventstore};
+use driver::repositories::ImageDataBase;
+use kernel::repositories::DependOnImageRepository;
+
+use crate::errors::UnrecoverableError;
 
 pub struct AppModule {
     inner: Arc<Handler>
@@ -32,14 +51,16 @@ impl Deref for AppModule {
 }
 
 pub struct Handler {
+    image: ImageDataBase,
+    
     registry: ProcessRegistry,
     extension: ProcessExtension,
     projector: EventProjector,
 }
 
-impl Handler {
+impl AppModule {
     pub async fn setup() -> Result<AppModule, Report<UnrecoverableError>> {
-        let _pool = init_sqlite("sqlite://.database/level.db").await
+        let pool = init_sqlite("sqlite://.database/level.db").await
             .change_context_lazy(|| UnrecoverableError)?;
         let event_store = setup_eventstore("sqlite://.database/journal.db").await
             .change_context_lazy(|| UnrecoverableError)?;
@@ -58,6 +79,7 @@ impl Handler {
 
         Ok(AppModule {
             inner: Arc::new(Handler {
+                image: ImageDataBase::new(pool),
                 registry,
                 extension,
                 projector,
@@ -65,6 +87,8 @@ impl Handler {
         })
     }
 }
+
+// --- Base ---------------------------------------
 
 impl DependOnEventProjector for Handler {
     fn projector(&self) -> &EventProjector {
@@ -84,6 +108,9 @@ impl DependOnProcessExtension for Handler {
     }
 }
 
+
+// --- Command Module -----------------------------
+
 impl DependOnCategoryCommandExecutor for Handler {
     type CategoryCommandExecutor = Handler;
 
@@ -99,6 +126,14 @@ impl DependOnCategoriesCommandExecutor for Handler {
     }
 }
 
+impl DependOnProductRegisterService for Handler {
+    type ProductRegisterService = Handler;
+
+    fn product_register_service(&self) -> &Self::ProductRegisterService {
+        self
+    }
+}
+
 impl DependOnProductCommandExecutor for Handler {
     type ProductCommandExecutor = Handler;
 
@@ -106,6 +141,26 @@ impl DependOnProductCommandExecutor for Handler {
         self
     }
 }
+
+impl DependOnContentRegisterService for Handler {
+    type ContentRegisterService = Self;
+
+    fn content_register_service(&self) -> &Self::ContentRegisterService {
+        self
+    }
+}
+
+// --- Repository Module --------------------------
+impl DependOnImageRepository for Handler {
+    type ImageRepository = ImageDataBase;
+
+    fn image_repository(&self) -> &Self::ImageRepository {
+        &self.image
+    }
+}
+
+
+// --- Query Module -------------------------------
 
 impl DependOnEventQueryProjector for Handler {
     fn projector(&self) -> &EventProjector {
@@ -117,6 +172,14 @@ impl DependOnCategoryQueryService for Handler {
     type CategoryQueryService = Handler;
 
     fn category_query_service(&self) -> &Self::CategoryQueryService {
+        self
+    }
+}
+
+impl DependOnProductQueryService for Handler {
+    type ProductQueryService = Handler;
+
+    fn product_query_service(&self) -> &Self::ProductQueryService {
         self
     }
 }

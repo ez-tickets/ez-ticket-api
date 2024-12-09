@@ -1,5 +1,7 @@
 #[derive(Debug, thiserror::Error)]
 pub enum ApplicationError {
+    #[error("Failed due to invalid given command.")]
+    InvalidGivenCommand,
     #[error("Failed due to missing id. entity=[{entity}]")]
     MissingId { entity: &'static str },
     #[error("Failed due to lack of necessary data. require=[{data}]")]

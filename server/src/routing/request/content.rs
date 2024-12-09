@@ -3,5 +3,5 @@ use kernel::entities::ImageId;
 
 #[derive(Deserialize)]
 pub struct ImageFindById {
-    id: ImageId
+    pub id: ImageId
 }

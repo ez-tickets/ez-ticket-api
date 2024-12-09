@@ -1,32 +1,22 @@
-use crate::entities::{ImageId, Price, ProductDescription, ProductId, ProductName};
 use nitinol::errors::{DeserializeError, SerializeError};
 use nitinol::Event;
 use serde::{Deserialize, Serialize};
+
+use crate::entities::{ProductId, ProductName};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ProductEvent {
     Created {
         id: ProductId,
         name: ProductName,
-        desc: ProductDescription,
-        price: Price,
     },
     UpdatedName {
+        id: ProductId,
         name: ProductName,
     },
-    UpdatedDescription {
-        desc: ProductDescription,
+    Deleted {
+        id: ProductId,
     },
-    StockedIn {
-        amount: i32,
-    },
-    StockedOut {
-        amount: i32,
-    },
-    UpdatedPrice {
-        price: Price,
-    },
-    Deleted,
 }
 
 impl Event for ProductEvent {

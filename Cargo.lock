@@ -1253,7 +1253,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 [[package]]
 name = "nitinol"
 version = "0.2.0-alpha"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=ac31585#ac31585cb9bf24de8c91436e77f2f242c7ddaf8f"
 dependencies = [
  "nitinol-core",
  "nitinol-persistence",
@@ -1265,7 +1265,7 @@ dependencies = [
 [[package]]
 name = "nitinol-core"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=ac31585#ac31585cb9bf24de8c91436e77f2f242c7ddaf8f"
 dependencies = [
  "async-trait",
  "futures-util",
@@ -1276,7 +1276,7 @@ dependencies = [
 [[package]]
 name = "nitinol-persistence"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=ac31585#ac31585cb9bf24de8c91436e77f2f242c7ddaf8f"
 dependencies = [
  "async-trait",
  "nitinol-core",
@@ -1288,7 +1288,7 @@ dependencies = [
 [[package]]
 name = "nitinol-process"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=ac31585#ac31585cb9bf24de8c91436e77f2f242c7ddaf8f"
 dependencies = [
  "async-channel",
  "async-trait",
@@ -1301,17 +1301,18 @@ dependencies = [
 [[package]]
 name = "nitinol-projection"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=ac31585#ac31585cb9bf24de8c91436e77f2f242c7ddaf8f"
 dependencies = [
  "nitinol-core",
  "nitinol-protocol",
  "thiserror 2.0.3",
+ "tracing",
 ]
 
 [[package]]
 name = "nitinol-protocol"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=3b46ed1#3b46ed1d80f19dcac19e1bb2cc7a14196b25185c"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=ac31585#ac31585cb9bf24de8c91436e77f2f242c7ddaf8f"
 dependencies = [
  "async-trait",
  "dotenvy",
@@ -1954,6 +1955,7 @@ version = "0.1.0"
 dependencies = [
  "application-command",
  "application-query",
+ "async-trait",
  "axum",
  "driver",
  "error-stack",
