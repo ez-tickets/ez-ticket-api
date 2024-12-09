@@ -2,7 +2,7 @@ use nitinol::errors::{DeserializeError, SerializeError};
 use nitinol::Event;
 use serde::{Deserialize, Serialize};
 
-use crate::entities::{CatalogDesc, CatalogId, CatalogName, MainProduct, OptProduct, OptionId, Price, ProductId, SubProduct};
+use crate::entities::{CatalogDesc, CatalogId, CatalogName, MainProduct, Price};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum CatalogEvent {
@@ -26,45 +26,6 @@ pub enum CatalogEvent {
         price: Price,
     },
     Deleted,
-    AddedMainProd {
-        id: CatalogId,
-        ordering: i32,
-        main: ProductId
-    },
-    UpdatedMainProdOrdering {
-        id: CatalogId,
-        ordering: MainProduct,
-    },
-    RemovedMainProd {
-        id: CatalogId,
-        main: ProductId
-    },
-    AddedSubProd {
-        id: CatalogId,
-        ordering: i32,
-        sub: ProductId
-    },
-    UpdatedSubProdOrdering {
-        id: CatalogId,
-        ordering: SubProduct,
-    },
-    RemovedSubProd {
-        id: CatalogId,
-        sub: ProductId
-    },
-    AddedOptProd {
-        id: CatalogId,
-        ordering: i32,
-        opt: OptionId
-    },
-    UpdatedOptProdOrdering {
-        id: CatalogId,
-        ordering: OptProduct,
-    },
-    RemovedOptProd {
-        id: CatalogId,
-        opt: OptionId
-    }
 }
 
 impl Event for CatalogEvent {

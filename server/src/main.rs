@@ -16,7 +16,10 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
         .route("/", get(|| async { "todo" }));
 
     let category = Router::new()
-        .route("/", get(category::categories).post(category::register));
+        .route("/", get(category::categories)
+            .post(category::register)
+            .patch(category::update_name)
+            .delete(category::delete));
     
     let product = Router::new()
         .route("/", get(product::product).post(product::register));

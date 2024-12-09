@@ -21,6 +21,7 @@ use application_command::{
     },
     services::content::DependOnContentRegisterService
 };
+use application_command::services::commands::DependOnCreateCategoryService;
 use application_query::{
     adaptor::DependOnEventQueryProjector,
     models::DependOnCategoryQueryService
@@ -111,9 +112,15 @@ impl DependOnProcessExtension for Handler {
 
 // --- Command Module -----------------------------
 
+impl DependOnCreateCategoryService for Handler {
+    type CreateCategoryService = Handler;
+    fn create_category_service(&self) -> &Self::CreateCategoryService {
+        self
+    }
+}
+
 impl DependOnCategoryCommandExecutor for Handler {
     type CategoryCommandExecutor = Handler;
-
     fn category_command_executor(&self) -> &Self::CategoryCommandExecutor {
         self
     }
@@ -128,7 +135,6 @@ impl DependOnCategoriesCommandExecutor for Handler {
 
 impl DependOnProductRegisterService for Handler {
     type ProductRegisterService = Handler;
-
     fn product_register_service(&self) -> &Self::ProductRegisterService {
         self
     }
@@ -136,7 +142,6 @@ impl DependOnProductRegisterService for Handler {
 
 impl DependOnProductCommandExecutor for Handler {
     type ProductCommandExecutor = Handler;
-
     fn product_command_executor(&self) -> &Self::ProductCommandExecutor {
         self
     }

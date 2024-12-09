@@ -1,4 +1,4 @@
-use crate::entities::{CatalogDesc, CatalogName, MainProduct, OptProduct, OptionId, Price, ProductId, SubProduct};
+use crate::entities::{CatalogDesc, CatalogName, MainProduct, Price};
 use nitinol::Command;
 use serde::{Deserialize, Serialize};
 
@@ -20,36 +20,6 @@ pub enum CatalogCommand {
         price: Price,
     },
     Delete,
-    AddMainProd {
-        ordering: i32,
-        main: ProductId
-    },
-    UpdateMainProdOrdering {
-        ordering: MainProduct
-    },
-    RemoveMainProd {
-        main: ProductId
-    },
-    AddSubProd {
-        ordering: i32,
-        sub: ProductId
-    },
-    UpdateSubProdOrdering {
-        ordering: SubProduct
-    },
-    RemoveSubProd {
-        sub: ProductId
-    },
-    AddOptProd {
-        ordering: i32,
-        opt: OptionId
-    },
-    UpdateOptProdOrdering {
-        ordering: OptProduct
-    },
-    RemoveOptProd {
-        opt: OptionId
-    }
 }
 
 impl Command for CatalogCommand {}

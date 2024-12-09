@@ -29,6 +29,8 @@ async-trait = { workspace = true }
 
 nitinol = { workspace = true, features = ["protocol", "process", "process-ext", "persistence"] }
 
+console-subscriber = "^0.4"
+
 application-command = { path = "../application-command" }
 application-query = { path = "../application-query" }
 driver = { path = "../driver" }
