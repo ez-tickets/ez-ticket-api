@@ -13,15 +13,21 @@ use application_command::{
         DependOnProcessExtension,
         DependOnProcessRegistry
     },
-    services::commands::{
-        DependOnCategoriesCommandExecutor,
-        DependOnCategoryCommandExecutor,
-        DependOnProductCommandExecutor,
-        DependOnProductRegisterService
-    },
-    services::content::DependOnContentRegisterService
+    services::{
+        commands::{
+            DependOnCategoriesCommandExecutor,
+            DependOnCategoryCommandExecutor,
+            DependOnProductCommandExecutor,
+            DependOnProductRegisterService,
+            DependOnCreateCategoryService
+        },
+        content::{
+            DependOnContentDeleteService,
+            DependOnContentRegisterService,
+            DependOnContentUpdateService
+        }
+    }
 };
-use application_command::services::commands::DependOnCreateCategoryService;
 use application_query::{
     adaptor::DependOnEventQueryProjector,
     models::DependOnCategoryQueryService
@@ -153,6 +159,22 @@ impl DependOnContentRegisterService for Handler {
     type ContentRegisterService = Self;
 
     fn content_register_service(&self) -> &Self::ContentRegisterService {
+        self
+    }
+}
+
+impl DependOnContentUpdateService for Handler {
+    type ContentUpdateService = Self;
+    
+    fn content_update_service(&self) -> &Self::ContentUpdateService {
+        self
+    }
+}
+
+impl DependOnContentDeleteService for Handler {
+    type ContentDeleteService = Self;
+    
+    fn content_delete_service(&self) -> &Self::ContentDeleteService {
         self
     }
 }

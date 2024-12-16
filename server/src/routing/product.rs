@@ -1,14 +1,14 @@
 use std::ops::Deref;
-use axum::extract::{Multipart, State};
+use axum::extract::{Multipart, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 use application_command::services::commands::{ProductRegisterService, ProductCommandExecutor};
-use application_command::services::content::{ContentRegisterService, DependOnContentRegisterService};
+use application_command::services::content::{ContentDeleteService, ContentRegisterService, DependOnContentDeleteService, DependOnContentRegisterService};
 use application_query::models::{AllProducts, DependOnProductQueryService, ProductQueryService};
 use kernel::commands::ProductCommand;
 use kernel::entities::ProductName;
 use crate::AppModule;
-use crate::routing::request::products::RegisterProduct;
+use crate::routing::request::products::{FindByProductId, RegisterProduct, UpdateProductName};
 use crate::routing::response::errors::ErrorResponse;
 
 pub async fn product(
@@ -73,5 +73,41 @@ pub async fn register(
             })?;
     }
     
+    Ok(StatusCode::OK)
+}
+
+pub async fn update_name(
+    State(app): State<AppModule>,
+    Query(target): Query<FindByProductId>,
+    Json(body): Json<UpdateProductName>
+) -> Result<StatusCode, ErrorResponse> {
+    ProductCommandExecutor::execute(app.deref(), target.id, ProductCommand::UpdateName { 
+        name: body.name 
+    }).await
+        .map_err(|e| {
+            tracing::error!("Failed to execute command: {:?}", e);
+            ErrorResponse::Deserialization
+        })?;
+    
+    Ok(StatusCode::OK)
+}
+
+pub async fn delete(
+    State(app): State<AppModule>,
+    Query(target): Query<FindByProductId>,
+) -> Result<StatusCode, ErrorResponse> {
+    ProductCommandExecutor::execute(app.deref(), target.id, ProductCommand::Delete).await
+        .map_err(|e| {
+            tracing::error!("Failed to execute command: {:?}", e);
+            ErrorResponse::Deserialization
+        })?;
+    
+    app.content_delete_service()
+        .delete_image(target.id.into())
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to delete image: {:?}", e);
+            ErrorResponse::Deserialization
+        })?;
     Ok(StatusCode::OK)
 }

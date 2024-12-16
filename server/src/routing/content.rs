@@ -1,7 +1,8 @@
-use axum::extract::{Query, State};
+use axum::extract::{Multipart, Query, State};
 use axum::http::header::CONTENT_TYPE;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use application_command::services::content::{ContentUpdateService, DependOnContentUpdateService};
 use kernel::repositories::{DependOnImageRepository, ImageRepository};
 use crate::AppModule;
 use crate::routing::request::content::ImageFindById;
@@ -25,4 +26,35 @@ pub async fn image(
         .body(image.into_response())
         .unwrap();
     Ok(res)
+}
+
+pub async fn update(
+    State(app): State<AppModule>,
+    Query(query): Query<ImageFindById>,
+    mut parts: Multipart
+) -> Result<StatusCode, ErrorResponse> {
+    let mut image = Vec::new();
+    while let Some(field) = parts.next_field().await? {
+        let Some(name) = field.name() else {
+            break;
+        };
+
+        if name == "image" && field.content_type().ok_or(ErrorResponse::Deserialization)?.eq(mime::IMAGE_PNG.as_ref()) {
+            image = field.bytes().await?.into();
+        }
+    }
+    
+    if image.is_empty() {
+        return Err(ErrorResponse::Deserialization);
+    }
+    
+    app.content_update_service()
+        .update_image(query.id, image)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to execute command: {:?}", e);
+            ErrorResponse::Deserialization
+        })?;
+    
+    Ok(StatusCode::OK)
 }

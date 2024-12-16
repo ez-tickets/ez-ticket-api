@@ -1,4 +1,4 @@
-use kernel::entities::CategoryId;
+use kernel::entities::{CategoryId, ProductId};
 use serde::Deserialize;
 use std::fmt::{Debug, Formatter};
 
@@ -20,4 +20,14 @@ impl Debug for RegisterProduct {
             .field("image", &"<byte-data>")
             .finish()
     }
+}
+
+#[derive(Deserialize)]
+pub struct FindByProductId {
+    pub id: ProductId
+}
+
+#[derive(Deserialize)]
+pub struct UpdateProductName {
+    pub name: String
 }

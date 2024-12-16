@@ -22,10 +22,14 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
             .delete(category::delete));
     
     let product = Router::new()
-        .route("/", get(product::product).post(product::register));
+        .route("/", get(product::product)
+            .post(product::register)
+            .patch(product::update_name)
+            .delete(product::delete));
 
     let content = Router::new()
-        .route("/", get(content::image));
+        .route("/", get(content::image)
+            .patch(content::update));
     
     let catalog = Router::new()
         .route("/", get(|| async { "todo" }));
