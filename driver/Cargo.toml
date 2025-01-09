@@ -9,11 +9,9 @@ license = { workspace = true }
 
 [dependencies]
 sqlx = { version = "=0.8", features = ["runtime-tokio", "migrate", "postgres", "sqlite", "uuid"] }
-nitinol = { workspace = true, features = ["process", "protocol", "sqlite"] }
 
 thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }
 
-application-query = { path = "../application-query" }
 kernel = { path = "../kernel" }

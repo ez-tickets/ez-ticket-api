@@ -1,9 +1,10 @@
 use axum::routing::get;
 use axum::Router;
 use error_stack::{Report, ResultExt};
-use server::errors::UnrecoverableError;
 use tokio::net::TcpListener;
+
 use server::routing::*;
+use server::errors::UnrecoverableError;
 
 #[tokio::main]
 async fn main() -> Result<(), Report<UnrecoverableError>> {
@@ -21,12 +22,6 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
             .patch(category::update_name)
             .delete(category::delete));
     
-    let product = Router::new()
-        .route("/", get(product::product)
-            .post(product::register)
-            .patch(product::update_name)
-            .delete(product::delete));
-
     let content = Router::new()
         .route("/", get(content::image)
             .patch(content::update));
@@ -36,7 +31,6 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
     
     let router = Router::new()
         .nest("/categories", category)
-        .nest("/products", product)
         .nest("/catalogs", catalog)
         .nest("/contents", content)
         .nest("/orders", order)

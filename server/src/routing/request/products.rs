@@ -1,4 +1,3 @@
-use kernel::entities::{CategoryId, ProductId};
 use serde::Deserialize;
 use std::fmt::{Debug, Formatter};
 

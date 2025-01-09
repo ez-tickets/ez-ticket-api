@@ -5,7 +5,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{EnvFilter, Layer};
 
 pub fn init() {
-    let appender = tracing_appender::rolling::daily(Path::new("./logs/"), "debug.log");
+    let appender = tracing_appender::rolling::daily(Path::new("./.logs/"), "debug.log");
     let (non_blocking_appender, _guard) = tracing_appender::non_blocking(appender);
     tracing_subscriber::registry()
         .with(
