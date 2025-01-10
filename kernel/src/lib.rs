@@ -1,3 +1,4 @@
+pub mod errors;
 pub mod entities;
-mod repositories;
-mod errors;
+pub mod repositories;
+pub mod process;
