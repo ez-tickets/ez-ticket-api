@@ -27,7 +27,7 @@ error-stack = { workspace = true }
 
 async-trait = { workspace = true }
 
-application = { path = "../application" }
+app-cmd = { path = "../app-cmd" }
 driver = { path = "../driver" }
 kernel = { path = "../kernel" }
 

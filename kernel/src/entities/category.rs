@@ -31,15 +31,15 @@ impl Category {
             products: BTreeMap::new()
         }
     }
-    
+
     pub fn id(&self) -> &CategoryId {
         &self.id
     }
-    
+
     pub fn name(&self) -> &CategoryName {
         &self.name
     }
-    
+
     pub fn products(&self) -> &BTreeMap<i32, ProductId> {
         &self.products
     }

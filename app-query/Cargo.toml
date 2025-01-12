@@ -1,0 +1,12 @@
+[package]
+name = "app-query"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kernel = { path = "../kernel" }
+tracing = "^0.1"
+
+thiserror = { workspace = true }
+error-stack = { workspace = true }
+async-trait = { workspace = true }

@@ -1,6 +1,7 @@
 [workspace]
 members = [
-  "application",
+  "app-cmd",
+  "app-query",
   "driver",
   "kernel",
   "server"
