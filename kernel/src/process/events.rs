@@ -4,4 +4,6 @@ mod categories;
 
 pub use self::{
     product::*,
+    category::*,
+    categories::*,
 };

@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -25,5 +26,11 @@ impl From<ImageId> for Uuid {
 impl Default for ImageId {
     fn default() -> Self {
         Self(Uuid::new_v4())
+    }
+}
+
+impl Display for ImageId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

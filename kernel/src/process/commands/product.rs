@@ -1,3 +1,4 @@
+use nitinol::macros::Command;
 use uuid::Uuid;
 
 
@@ -11,7 +12,7 @@ use uuid::Uuid;
 /// | `EditProductDesc`   | Edits the product description.   |
 /// | `ChangeProductPrice`| Changes the product price.       |
 /// | `Delete`            | Deletes the product.             |
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Command)]
 pub enum ProductCommand {
     Register { 
         name: String, 

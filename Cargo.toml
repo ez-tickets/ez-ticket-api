@@ -18,3 +18,7 @@ tracing = "=0.1"
 thiserror = "^2"
 error-stack = "^0.5"
 async-trait = "^0.1"
+
+[workspace.dependencies.nitinol]
+git = "https://github.com/HalsekiRaika/nitinol"
+rev = "afb07f72d3377119a79cb9de440eb3651ba6d40a"
