@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use nitinol::macros::Command;
+use crate::entities::category::CategoryName;
 use crate::entities::product::ProductId;
 
 /// CategoryCommand is a command that can be applied to a [`Category`](crate::entities::category::Category) entity.
@@ -15,10 +16,10 @@ use crate::entities::product::ProductId;
 #[derive(Debug, Clone, Command)]
 pub enum CategoryCommand {
     Create {
-        name: String
+        name: CategoryName
     },
     Rename {
-        new: String
+        new: CategoryName
     },
     Delete,
     

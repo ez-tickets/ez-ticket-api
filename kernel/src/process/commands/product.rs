@@ -1,6 +1,6 @@
+use crate::entities::image::ImageId;
+use crate::entities::product::{ProductDesc, ProductName, ProductPrice};
 use nitinol::macros::Command;
-use uuid::Uuid;
-
 
 /// This command is used to interact with a [`Product`](crate::entities::product::Product) entity.
 /// 
@@ -15,19 +15,19 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Command)]
 pub enum ProductCommand {
     Register { 
-        name: String, 
-        desc: String, 
-        price: i64,
-        image: Uuid
+        name: ProductName, 
+        desc: ProductDesc, 
+        price: ProductPrice,
+        image: ImageId
     },
     RenameProductName {
-        new: String
+        new: ProductName
     },
     EditProductDesc {
-        new: String
+        new: ProductDesc
     },
     ChangeProductPrice {
-        new: i64
+        new: ProductPrice
     },
     Delete,
 }
