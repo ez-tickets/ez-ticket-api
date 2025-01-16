@@ -7,6 +7,7 @@ pub use self::{
 };
 
 use std::collections::{BTreeMap, HashSet};
+
 use async_trait::async_trait;
 use destructure::{Destructure, Mutation};
 use error_stack::Report;
@@ -71,11 +72,9 @@ impl Publisher<CategoryCommand> for Category {
     async fn publish(&self, command: CategoryCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
             CategoryCommand::Create { name } => {
-                let name = CategoryName::new(name)?;
                 CategoryEvent::Created { id: self.id, name }
             }
             CategoryCommand::Rename { new } => {
-                let new = CategoryName::new(new)?;
                 CategoryEvent::Renamed { new }
             }
             CategoryCommand::Delete => {
@@ -168,7 +167,7 @@ impl Projection<CategoryEvent> for Category {
                 self.name = new;
             }
             CategoryEvent::Deleted => {
-                panic!("");
+                panic!("This entity has a delete event issued.");
             }
             CategoryEvent::AddedProduct { id } => {
                 let next = self.products.len() as i32;
