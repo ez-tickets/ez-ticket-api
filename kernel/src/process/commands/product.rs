@@ -3,7 +3,7 @@ use crate::entities::product::{ProductDesc, ProductName, ProductPrice};
 use nitinol::macros::Command;
 
 /// This command is used to interact with a [`Product`](crate::entities::product::Product) entity.
-/// 
+///
 /// # Commands
 /// | Command             | Description                      |
 /// |---------------------|----------------------------------|
@@ -14,21 +14,20 @@ use nitinol::macros::Command;
 /// | `Delete`            | Deletes the product.             |
 #[derive(Debug, Clone, Command)]
 pub enum ProductCommand {
-    Register { 
-        name: ProductName, 
-        desc: ProductDesc, 
+    Register {
+        name: ProductName,
+        desc: ProductDesc,
         price: ProductPrice,
-        image: ImageId
+        image: ImageId,
     },
     RenameProductName {
-        new: ProductName
+        new: ProductName,
     },
     EditProductDesc {
-        new: ProductDesc
+        new: ProductDesc,
     },
     ChangeProductPrice {
-        new: ProductPrice
+        new: ProductPrice,
     },
     Delete,
 }
-

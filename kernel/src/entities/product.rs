@@ -1,14 +1,9 @@
+mod desc;
 mod id;
 mod name;
 mod price;
-mod desc;
 
-pub use self::{
-    id::*,
-    name::*,
-    desc::*,
-    price::*,
-};
+pub use self::{desc::*, id::*, name::*, price::*};
 
 use std::convert::Infallible;
 
@@ -34,7 +29,7 @@ pub struct Product {
     name: ProductName,
     desc: ProductDesc,
     price: ProductPrice,
-    image: ImageId
+    image: ImageId,
 }
 
 impl Product {
@@ -43,14 +38,14 @@ impl Product {
         name: ProductName,
         desc: ProductDesc,
         price: ProductPrice,
-        image: ImageId
+        image: ImageId,
     ) -> Product {
         Product {
             id,
             name,
             desc,
             price,
-            image
+            image,
         }
     }
 
@@ -69,7 +64,7 @@ impl Product {
     pub fn price(&self) -> &ProductPrice {
         &self.price
     }
-    
+
     pub fn image(&self) -> &ImageId {
         &self.image
     }
@@ -88,23 +83,32 @@ impl Publisher<ProductCommand> for Product {
     type Event = ProductEvent;
     type Rejection = Report<ValidationError>;
 
-    async fn publish(&self, command: ProductCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
+    async fn publish(
+        &self,
+        command: ProductCommand,
+        _: &mut Context,
+    ) -> Result<Self::Event, Self::Rejection> {
         match command {
-            ProductCommand::Register { name, desc, price, image } => {
-                Ok(ProductEvent::Registered { id: self.id, name, desc, price, image })
-            }
+            ProductCommand::Register {
+                name,
+                desc,
+                price,
+                image,
+            } => Ok(ProductEvent::Registered {
+                id: self.id,
+                name,
+                desc,
+                price,
+                image,
+            }),
             ProductCommand::RenameProductName { new } => {
                 Ok(ProductEvent::RenamedProductName { new })
             }
-            ProductCommand::EditProductDesc { new } => {
-                Ok(ProductEvent::EditedProductDesc { new })
-            }
+            ProductCommand::EditProductDesc { new } => Ok(ProductEvent::EditedProductDesc { new }),
             ProductCommand::ChangeProductPrice { new } => {
                 Ok(ProductEvent::ChangedProductPrice { new })
             }
-            ProductCommand::Delete => {
-                Ok(ProductEvent::Deleted)
-            }
+            ProductCommand::Delete => Ok(ProductEvent::Deleted),
         }
     }
 }
@@ -113,7 +117,7 @@ impl Publisher<ProductCommand> for Product {
 impl Applicator<ProductEvent> for Product {
     async fn apply(&mut self, event: ProductEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
-        
+
         match event {
             ProductEvent::RenamedProductName { new } => {
                 self.name = new;
@@ -143,10 +147,17 @@ impl Projection<ProductEvent> for Product {
     type Rejection = Infallible;
 
     async fn first(event: ProductEvent) -> Result<Self, Self::Rejection> {
-        let ProductEvent::Registered { id, name, desc, price, image } = event else {
+        let ProductEvent::Registered {
+            id,
+            name,
+            desc,
+            price,
+            image,
+        } = event
+        else {
             panic!("Projection must start with `ProductCommand::Register` event");
         };
-        
+
         Ok(Self::new(id, name, desc, price, image))
     }
 
@@ -166,7 +177,7 @@ impl Projection<ProductEvent> for Product {
             }
             _ => {}
         }
-        
+
         Ok(())
     }
 }

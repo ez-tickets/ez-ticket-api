@@ -1,9 +1,5 @@
-mod product;
-mod category;
 mod categories;
+mod category;
+mod product;
 
-pub use self::{
-    category::*,
-    categories::*,
-    product::*,
-};
+pub use self::{categories::*, category::*, product::*};

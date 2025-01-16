@@ -1,7 +1,7 @@
+use crate::entities::image::ImageId;
+use crate::entities::product::{ProductDesc, ProductId, ProductName, ProductPrice};
 use nitinol::macros::Event;
 use serde::{Deserialize, Serialize};
-use crate::entities::product::{ProductDesc, ProductId, ProductName, ProductPrice};
-use crate::entities::image::ImageId;
 
 #[derive(Debug, Clone, Event, Deserialize, Serialize)]
 #[persist(enc = "flexbuffers::to_vec", dec = "flexbuffers::from_slice")]
@@ -11,16 +11,16 @@ pub enum ProductEvent {
         name: ProductName,
         desc: ProductDesc,
         price: ProductPrice,
-        image: ImageId
+        image: ImageId,
     },
     RenamedProductName {
-        new: ProductName
+        new: ProductName,
     },
     EditedProductDesc {
-        new: ProductDesc
+        new: ProductDesc,
     },
     ChangedProductPrice {
-        new: ProductPrice
+        new: ProductPrice,
     },
-    Deleted
+    Deleted,
 }

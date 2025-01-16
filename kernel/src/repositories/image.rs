@@ -1,6 +1,6 @@
-use async_trait::async_trait;
 use crate::entities::image::{Image, ImageId};
 use crate::errors::DriverError;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait ImageRepository: 'static + Sync + Send {

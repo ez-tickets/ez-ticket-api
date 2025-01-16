@@ -44,7 +44,6 @@ impl AsRef<BTreeMap<i32, CategoryId>> for Categories {
     }
 }
 
-
 impl Process for Categories {}
 
 impl WithPersistence for Categories {
@@ -58,10 +57,14 @@ impl Publisher<CategoriesCommand> for Categories {
     type Event = CategoriesEvent;
     type Rejection = Report<ValidationError>;
 
-    async fn publish(&self, command: CategoriesCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
+    async fn publish(
+        &self,
+        command: CategoriesCommand,
+        _: &mut Context,
+    ) -> Result<Self::Event, Self::Rejection> {
         match command {
             CategoriesCommand::AddCategory { id } => {
-                if self.categories.iter().any(|(_, exist)| exist.eq(&id)) { 
+                if self.categories.iter().any(|(_, exist)| exist.eq(&id)) {
                     return Err(Report::new(ValidationError)
                         .attach_printable(format!("Category={id} already exists")));
                 }
@@ -72,18 +75,23 @@ impl Publisher<CategoriesCommand> for Categories {
                     return Err(Report::new(ValidationError)
                         .attach_printable(format!("Category={id} does not exist")));
                 }
-                
+
                 Ok(CategoriesEvent::RemovedCategory { id })
             }
             CategoriesCommand::ChangeOrdering { new } => {
-                let older = self.categories.values().copied().collect::<HashSet<CategoryId>>();
+                let older = self
+                    .categories
+                    .values()
+                    .copied()
+                    .collect::<HashSet<CategoryId>>();
                 let newer = new.values().copied().collect::<HashSet<CategoryId>>();
-                
+
                 if !(&older ^ &newer).is_empty() {
-                    return Err(Report::new(ValidationError)
-                        .attach_printable("Categories cannot be added or deleted within this command"));
+                    return Err(Report::new(ValidationError).attach_printable(
+                        "Categories cannot be added or deleted within this command",
+                    ));
                 }
-                
+
                 Ok(CategoriesEvent::ChangedOrdering { new })
             }
         }
@@ -97,7 +105,6 @@ impl Applicator<CategoriesEvent> for Categories {
         Categories::apply(self, event);
     }
 }
-
 
 impl ResolveMapping for Categories {
     fn mapping(mapper: &mut Mapper<Self>) {

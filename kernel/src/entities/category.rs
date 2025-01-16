@@ -1,10 +1,7 @@
 mod id;
 mod name;
 
-pub use self::{
-    id::*,
-    name::*,
-};
+pub use self::{id::*, name::*};
 
 use std::collections::{BTreeMap, HashSet};
 
@@ -13,8 +10,8 @@ use destructure::{Destructure, Mutation};
 use error_stack::Report;
 use serde::{Deserialize, Serialize};
 
-use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::process::persistence::WithPersistence;
+use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
 use nitinol::resolver::{Mapper, ResolveMapping};
 use nitinol::ToEntityId;
@@ -28,18 +25,15 @@ use crate::process::events::CategoryEvent;
 pub struct Category {
     id: CategoryId,
     name: CategoryName,
-    products: BTreeMap<i32, ProductId>
+    products: BTreeMap<i32, ProductId>,
 }
 
 impl Category {
-    pub fn new(
-        id: CategoryId,
-        name: CategoryName,
-    ) -> Category {
+    pub fn new(id: CategoryId, name: CategoryName) -> Category {
         Category {
             id,
             name,
-            products: BTreeMap::new()
+            products: BTreeMap::new(),
         }
     }
 
@@ -69,56 +63,54 @@ impl Publisher<CategoryCommand> for Category {
     type Event = CategoryEvent;
     type Rejection = Report<ValidationError>;
 
-    async fn publish(&self, command: CategoryCommand, _: &mut Context) -> Result<Self::Event, Self::Rejection> {
+    async fn publish(
+        &self,
+        command: CategoryCommand,
+        _: &mut Context,
+    ) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
-            CategoryCommand::Create { name } => {
-                CategoryEvent::Created { id: self.id, name }
-            }
-            CategoryCommand::Rename { new } => {
-                CategoryEvent::Renamed { new }
-            }
-            CategoryCommand::Delete => {
-                CategoryEvent::Deleted
-            }
+            CategoryCommand::Create { name } => CategoryEvent::Created { id: self.id, name },
+            CategoryCommand::Rename { new } => CategoryEvent::Renamed { new },
+            CategoryCommand::Delete => CategoryEvent::Deleted,
             CategoryCommand::AddProduct { id } => {
                 if self.products.iter().any(|(_, p)| p == &id) {
                     return Err(Report::new(ValidationError)
                         .attach_printable("Product already exists in category"));
                 }
-                
+
                 CategoryEvent::AddedProduct { id }
             }
             CategoryCommand::RemoveProduct { id } => {
-                if !self.products.iter().any(|(_, p)| p == &id) { 
+                if !self.products.iter().any(|(_, p)| p == &id) {
                     return Err(Report::new(ValidationError)
                         .attach_printable("Product does not exist in category"));
                 }
-                
+
                 CategoryEvent::RemovedProduct { id }
             }
             CategoryCommand::ChangeProductOrdering { new } => {
                 let older = self.products.values().copied().collect::<HashSet<_>>();
                 let newer = new.values().copied().collect::<HashSet<_>>();
-                
+
                 if !(&older ^ &newer).is_empty() {
-                    return Err(Report::new(ValidationError)
-                        .attach_printable("Product ordering must not be added or deleted within this command"));
+                    return Err(Report::new(ValidationError).attach_printable(
+                        "Product ordering must not be added or deleted within this command",
+                    ));
                 }
-                
+
                 CategoryEvent::ChangedProductOrdering { new }
             }
         };
-        
+
         Ok(ev)
     }
 }
-
 
 #[async_trait]
 impl Applicator<CategoryEvent> for Category {
     async fn apply(&mut self, event: CategoryEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
-        
+
         match event {
             CategoryEvent::Created { name, .. } => {
                 self.name = name;
@@ -142,7 +134,6 @@ impl Applicator<CategoryEvent> for Category {
         }
     }
 }
-
 
 impl ResolveMapping for Category {
     fn mapping(mapper: &mut Mapper<Self>) {
@@ -179,7 +170,7 @@ impl Projection<CategoryEvent> for Category {
             CategoryEvent::ChangedProductOrdering { new } => {
                 self.products = new;
             }
-            _ => return Ok(())
+            _ => return Ok(()),
         }
         Ok(())
     }
