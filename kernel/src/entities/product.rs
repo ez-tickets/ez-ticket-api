@@ -20,8 +20,8 @@ use nitinol::ToEntityId;
 
 use crate::entities::image::ImageId;
 use crate::errors::ValidationError;
-use crate::process::commands::ProductCommand;
-use crate::process::events::ProductEvent;
+use crate::io::commands::ProductCommand;
+use crate::io::events::ProductEvent;
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Product {

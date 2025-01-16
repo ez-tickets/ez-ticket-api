@@ -13,8 +13,8 @@ use nitinol::ToEntityId;
 
 use crate::entities::category::CategoryId;
 use crate::errors::ValidationError;
-use crate::process::commands::CategoriesCommand;
-use crate::process::events::CategoriesEvent;
+use crate::io::commands::CategoriesCommand;
+use crate::io::events::CategoriesEvent;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Categories {
