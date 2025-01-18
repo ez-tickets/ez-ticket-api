@@ -26,15 +26,10 @@ where
     Self: DependOnProcessManager
         + DependOnEventProjector
 {
-    async fn execute<I, R>(&self, id: I, req: R) -> Result<(), Report<ApplicationError>>
+    async fn execute<I>(&self, id: I, cmd: ProductCommand) -> Result<(), Report<ApplicationError>>
         where 
             I: Into<Option<ProductId>> + Sync + Send,
-            R: TryInto<ProductCommand> + Sync + Send,
-            R::Error: Error + Sync + Send + 'static
     {
-        let cmd = req.try_into()
-            .map_err(|e| Report::new(e).change_context(ApplicationError::Formation))?;
-        
         let manager = self.process_manager();
         
         let refs = if let ProductCommand::Register { .. } = &cmd {

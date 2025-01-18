@@ -26,13 +26,7 @@ where
     Self: DependOnProcessManager
         + DependOnEventProjector
 {
-    async fn execute<R>(&self, req: R) -> Result<(), Report<ApplicationError>> 
-        where R: TryInto<CategoriesCommand> + Sync + Send,
-              R::Error: Error + Sync + Send + 'static
-    {
-        let cmd = req.try_into()
-            .map_err(|e| Report::new(e).change_context(ApplicationError::Formation))?;
-        
+    async fn execute(&self, cmd: CategoriesCommand) -> Result<(), Report<ApplicationError>> {
         let manager = self.process_manager();
         
         let refs = adapter::utils::find_or_replay::<Categories>(Categories::ID, manager, self.event_projector()).await?;
