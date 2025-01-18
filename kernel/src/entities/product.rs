@@ -15,11 +15,11 @@ use serde::{Deserialize, Serialize};
 use nitinol::process::persistence::WithPersistence;
 use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
-use nitinol::resolver::{Mapper, ResolveMapping};
+use nitinol::projection::resolver::{Mapper, ResolveMapping};
 use nitinol::ToEntityId;
 
 use crate::entities::image::ImageId;
-use crate::errors::ValidationError;
+use crate::errors::{FormationError, ValidationError};
 use crate::io::commands::ProductCommand;
 use crate::io::events::ProductEvent;
 
@@ -67,6 +67,25 @@ impl Product {
 
     pub fn image(&self) -> &ImageId {
         &self.image
+    }
+}
+
+impl TryFrom<(ProductId, ProductCommand)> for Product {
+    type Error = Report<FormationError>;
+
+    fn try_from(value: (ProductId, ProductCommand)) -> Result<Self, Self::Error> {
+        let ProductCommand::Register {
+            name,
+            desc,
+            price,
+            image,
+        } = value.1 else {
+            return Err(Report::new(FormationError).attach_printable(
+                "ProductCommand::Register is the only command that can be converted to Product",
+            ));
+        };
+        
+        Ok(Product { id: value.0, name, desc, price, image })
     }
 }
 

@@ -13,11 +13,11 @@ use serde::{Deserialize, Serialize};
 use nitinol::process::persistence::WithPersistence;
 use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
-use nitinol::resolver::{Mapper, ResolveMapping};
+use nitinol::projection::resolver::{Mapper, ResolveMapping};
 use nitinol::ToEntityId;
 
 use crate::entities::product::ProductId;
-use crate::errors::ValidationError;
+use crate::errors::{FormationError, ValidationError};
 use crate::io::commands::CategoryCommand;
 use crate::io::events::CategoryEvent;
 
@@ -47,6 +47,18 @@ impl Category {
 
     pub fn products(&self) -> &BTreeMap<i32, ProductId> {
         &self.products
+    }
+}
+
+impl TryFrom<(CategoryId, CategoryCommand)> for Category {
+    type Error = Report<FormationError>;
+
+    fn try_from(value: (CategoryId, CategoryCommand)) -> Result<Self, Self::Error> {
+        let CategoryCommand::Create { name } = value.1 else {
+            return Err(Report::new(FormationError).attach_printable("Invalid command"));
+        };
+        
+        Ok(Self::new(value.0, name))
     }
 }
 

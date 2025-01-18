@@ -14,3 +14,9 @@ tracing = "^0.1"
 thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }
+
+nitinol = { workspace = true, features = ["process", "projection"] }
+
+[dev-dependencies]
+tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }
+nitinol = { workspace = true, features = ["process", "projection", "persistence", "protocol", "inmemory"] }

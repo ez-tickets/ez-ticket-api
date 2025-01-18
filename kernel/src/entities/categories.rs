@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use nitinol::process::persistence::WithPersistence;
 use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
-use nitinol::resolver::{Mapper, ResolveMapping};
+use nitinol::projection::resolver::{Mapper, ResolveMapping};
 use nitinol::ToEntityId;
 
 use crate::entities::category::CategoryId;
@@ -22,6 +22,8 @@ pub struct Categories {
 }
 
 impl Categories {
+    pub const ID: &'static str = "categories";
+    
     fn apply(&mut self, event: CategoriesEvent) {
         match event {
             CategoriesEvent::AddedCategory { id } => {
@@ -48,7 +50,7 @@ impl Process for Categories {}
 
 impl WithPersistence for Categories {
     fn aggregate_id(&self) -> impl ToEntityId {
-        "categories"
+        Categories::ID
     }
 }
 
