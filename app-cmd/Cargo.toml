@@ -20,3 +20,5 @@ nitinol = { workspace = true, features = ["process", "projection"] }
 [dev-dependencies]
 tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }
 nitinol = { workspace = true, features = ["process", "projection", "persistence", "protocol", "inmemory"] }
+
+tracing-subscriber = "^0.3"

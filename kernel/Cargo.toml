@@ -19,4 +19,8 @@ thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }
 
+tracing = "^0.1"
+
 nitinol = { workspace = true, features = ["process", "persistence", "projection", "macro"] }
+
+[dev-dependencies]

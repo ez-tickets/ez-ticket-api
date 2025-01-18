@@ -13,7 +13,8 @@ pub struct UnrecoverableError;
 #[derive(Clone)]
 pub struct TestFramework {
     manager: ProcessManager,
-    projector: EventProjector
+    projector: EventProjector,
+    journal: InMemoryEventStore
 }
 
 impl TestFramework {
@@ -23,9 +24,13 @@ impl TestFramework {
             ext.install(PersistenceExtension::new(inmemory.clone()))
         }).change_context_lazy(|| UnrecoverableError)?;
         
-        let projector = EventProjector::new(ReadProtocol::new(inmemory));
+        let projector = EventProjector::new(ReadProtocol::new(inmemory.clone()));
         
-        Ok(TestFramework { manager, projector })
+        Ok(TestFramework { manager, projector, journal: inmemory })
+    }
+    
+    pub fn journal(&self) -> ReadProtocol {
+        ReadProtocol::new(self.journal.clone())
     }
 }
 
