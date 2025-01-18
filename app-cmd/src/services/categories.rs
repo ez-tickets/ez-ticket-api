@@ -29,7 +29,17 @@ where
     async fn execute(&self, cmd: CategoriesCommand) -> Result<(), Report<ApplicationError>> {
         let manager = self.process_manager();
         
-        let refs = adapter::utils::find_or_replay::<Categories>(Categories::ID, manager, self.event_projector()).await?;
+        let refs = match manager.find::<Categories>(Categories::ID).await
+            .change_context_lazy(|| ApplicationError::Process)? {
+            Some(refs) => refs,
+            None => {
+                let projector = self.event_projector();
+                let replay = projector.projection_to_latest::<Categories>(Categories::ID, (Categories::default(), 0)).await
+                    .change_context_lazy(|| ApplicationError::Formation)?;
+                manager.spawn(Categories::ID, replay.0, replay.1).await
+                    .change_context_lazy(|| ApplicationError::Process)?
+            }
+        };
         
         let event = refs.publish(cmd).await
             .change_context_lazy(|| ApplicationError::Process)?
