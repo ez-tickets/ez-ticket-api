@@ -1,10 +1,9 @@
-use std::error::Error;
 use async_trait::async_trait;
 use error_stack::{Report, ResultExt};
 use kernel::entities::categories::Categories;
 use kernel::io::commands::CategoriesCommand;
 
-use crate::adapter::{self, DependOnEventProjector, DependOnProcessManager};
+use crate::adapter::{DependOnEventProjector, DependOnProcessManager};
 use crate::errors::ApplicationError;
 
 impl<T> CategoriesCommandService for T 
