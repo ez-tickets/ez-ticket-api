@@ -1,10 +1,9 @@
-use std::error::Error;
 use async_trait::async_trait;
 use error_stack::{Report, ResultExt};
 use kernel::entities::product::{Product, ProductId};
 use kernel::io::commands::ProductCommand;
 
-use crate::adapter::{self, DependOnProcessManager, DependOnEventProjector};
+use crate::adapter::{self, DependOnEventProjector, DependOnProcessManager};
 use crate::errors::ApplicationError;
 
 
