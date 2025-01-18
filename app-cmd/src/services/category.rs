@@ -1,16 +1,17 @@
-use std::error::Error;
 use async_trait::async_trait;
 use error_stack::{Report, ResultExt};
 use kernel::entities::category::{Category, CategoryId};
-use kernel::io::commands::CategoryCommand;
-
-use crate::adapter::{self, DependOnProcessManager, DependOnEventProjector};
+use kernel::io::commands::{CategoriesCommand, CategoryCommand};
+use kernel::io::events::CategoryEvent;
+use crate::adapter::{self, DependOnEventProjector, DependOnProcessManager};
 use crate::errors::ApplicationError;
+use crate::services::categories::{CategoriesCommandService, DependOnCategoriesCommandService};
 
 impl<T> CategoryCommandService for T 
 where T
       : DependOnProcessManager 
-      + DependOnEventProjector {}
+      + DependOnEventProjector
+      + DependOnCategoriesCommandService {}
 
 pub trait DependOnCategoryCommandService: 'static + Sync + Send {
     type CategoryCommandService: CategoryCommandService;
@@ -22,6 +23,7 @@ pub trait CategoryCommandService: 'static + Sync + Send
 where
     Self: DependOnProcessManager
         + DependOnEventProjector
+        + DependOnCategoriesCommandService
 {
     async fn execute<I>(&self, id: I, cmd: CategoryCommand) -> Result<(), Report<ApplicationError>>
         where
@@ -46,6 +48,16 @@ where
         let event = refs.publish(cmd).await
             .change_context_lazy(|| ApplicationError::Process)?
             .change_context_lazy(|| ApplicationError::Kernel)?;
+        
+        if let CategoryEvent::Created { .. } | CategoryEvent::Deleted { .. } = event {
+            let cmd = CategoriesCommand::try_from(event.clone())
+                .change_context_lazy(|| ApplicationError::Formation)?;
+            
+            self.categories_command_service()
+                .execute(cmd)
+                .await
+                .change_context_lazy(|| ApplicationError::Process)?;
+        }
         
         refs.apply(event).await
             .change_context_lazy(|| ApplicationError::Process)?;
