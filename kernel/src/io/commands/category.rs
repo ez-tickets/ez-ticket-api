@@ -21,5 +21,5 @@ pub enum CategoryCommand {
 
     AddProduct { id: ProductId },
     RemoveProduct { id: ProductId },
-    ChangeProductOrdering { new: BTreeMap<i32, ProductId> },
+    ChangeProductOrdering { new: BTreeMap<i64, ProductId> },
 }

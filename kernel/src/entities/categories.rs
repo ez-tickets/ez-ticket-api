@@ -18,7 +18,7 @@ use crate::io::events::CategoriesEvent;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Categories {
-    categories: BTreeMap<i32, CategoryId>,
+    categories: BTreeMap<i64, CategoryId>,
 }
 
 impl Categories {
@@ -27,7 +27,7 @@ impl Categories {
     fn apply(&mut self, event: CategoriesEvent) {
         match event {
             CategoriesEvent::AddedCategory { id } => {
-                let next = self.categories.len() as i32;
+                let next = self.categories.len() as i64;
                 self.categories.insert(next, id);
             }
             CategoriesEvent::RemovedCategory { id } => {
@@ -40,8 +40,8 @@ impl Categories {
     }
 }
 
-impl AsRef<BTreeMap<i32, CategoryId>> for Categories {
-    fn as_ref(&self) -> &BTreeMap<i32, CategoryId> {
+impl AsRef<BTreeMap<i64, CategoryId>> for Categories {
+    fn as_ref(&self) -> &BTreeMap<i64, CategoryId> {
         &self.categories
     }
 }
@@ -104,7 +104,9 @@ impl Publisher<CategoriesCommand> for Categories {
 impl Applicator<CategoriesEvent> for Categories {
     async fn apply(&mut self, event: CategoriesEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
+        tracing::debug!("Applying event: {:?}", event);
         Categories::apply(self, event);
+        tracing::debug!("State: {:?}", self);
     }
 }
 

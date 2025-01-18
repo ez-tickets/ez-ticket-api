@@ -25,7 +25,7 @@ use crate::io::events::CategoryEvent;
 pub struct Category {
     id: CategoryId,
     name: CategoryName,
-    products: BTreeMap<i32, ProductId>,
+    products: BTreeMap<i64, ProductId>,
 }
 
 impl Category {
@@ -45,7 +45,7 @@ impl Category {
         &self.name
     }
 
-    pub fn products(&self) -> &BTreeMap<i32, ProductId> {
+    pub fn products(&self) -> &BTreeMap<i64, ProductId> {
         &self.products
     }
 }
@@ -83,7 +83,7 @@ impl Publisher<CategoryCommand> for Category {
         let ev = match command {
             CategoryCommand::Create { name } => CategoryEvent::Created { id: self.id, name },
             CategoryCommand::Rename { new } => CategoryEvent::Renamed { new },
-            CategoryCommand::Delete => CategoryEvent::Deleted,
+            CategoryCommand::Delete => CategoryEvent::Deleted { id: self.id },
             CategoryCommand::AddProduct { id } => {
                 if self.products.iter().any(|(_, p)| p == &id) {
                     return Err(Report::new(ValidationError)
@@ -122,7 +122,8 @@ impl Publisher<CategoryCommand> for Category {
 impl Applicator<CategoryEvent> for Category {
     async fn apply(&mut self, event: CategoryEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
-
+        
+        tracing::debug!("Applying event: {:?}", event);
         match event {
             CategoryEvent::Created { name, .. } => {
                 self.name = name;
@@ -130,11 +131,11 @@ impl Applicator<CategoryEvent> for Category {
             CategoryEvent::Renamed { new } => {
                 self.name = new;
             }
-            CategoryEvent::Deleted => {
+            CategoryEvent::Deleted { .. } => {
                 ctx.poison_pill().await;
             }
             CategoryEvent::AddedProduct { id } => {
-                let next = self.products.len() as i32;
+                let next = self.products.len() as i64;
                 self.products.insert(next, id);
             }
             CategoryEvent::RemovedProduct { id } => {
@@ -144,6 +145,7 @@ impl Applicator<CategoryEvent> for Category {
                 self.products = new;
             }
         }
+        tracing::debug!("State: {:?}", self);
     }
 }
 
@@ -169,11 +171,11 @@ impl Projection<CategoryEvent> for Category {
             CategoryEvent::Renamed { new } => {
                 self.name = new;
             }
-            CategoryEvent::Deleted => {
+            CategoryEvent::Deleted { .. } => {
                 panic!("This entity has a delete event issued.");
             }
             CategoryEvent::AddedProduct { id } => {
-                let next = self.products.len() as i32;
+                let next = self.products.len() as i64;
                 self.products.insert(next, id);
             }
             CategoryEvent::RemovedProduct { id } => {
