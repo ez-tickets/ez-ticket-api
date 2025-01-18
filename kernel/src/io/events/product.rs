@@ -4,7 +4,7 @@ use nitinol::macros::Event;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Event, Deserialize, Serialize)]
-#[persist(enc = "flexbuffers::to_vec", dec = "flexbuffers::from_slice")]
+#[persist(enc = "serde_json::to_vec", dec = "serde_json::from_slice")]
 pub enum ProductEvent {
     Registered {
         id: ProductId,
