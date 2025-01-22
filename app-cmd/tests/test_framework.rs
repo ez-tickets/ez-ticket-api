@@ -1,4 +1,6 @@
 use error_stack::{Report, ResultExt};
+use nitinol::eventstream::EventStream;
+use nitinol::process::eventstream::EventStreamExtension;
 use nitinol::process::manager::ProcessManager;
 use nitinol::process::persistence::PersistenceExtension;
 use nitinol::projection::EventProjector;
@@ -20,11 +22,13 @@ pub struct TestFramework {
 impl TestFramework {
     pub fn new() -> Result<TestFramework, Report<UnrecoverableError>> {
         let inmemory = InMemoryEventStore::default();
+        let stream = EventStream::default();
         let manager = ProcessManager::with_extension(|ext| {
-            ext.install(PersistenceExtension::new(inmemory.clone()))
+            ext.install(PersistenceExtension::new(inmemory.clone()))?
+                .install(EventStreamExtension::new(stream))
         }).change_context_lazy(|| UnrecoverableError)?;
         
-        let projector = EventProjector::new(ReadProtocol::new(inmemory.clone()));
+        let projector = EventProjector::new(inmemory.clone());
         
         Ok(TestFramework { manager, projector, journal: inmemory })
     }

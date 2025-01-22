@@ -16,8 +16,8 @@ use nitinol::process::persistence::WithPersistence;
 use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
 use nitinol::projection::resolver::{Mapper, ResolveMapping};
-use nitinol::ToEntityId;
-
+use nitinol::{EntityId, ToEntityId};
+use nitinol::process::eventstream::WithStreamPublisher;
 use crate::entities::image::ImageId;
 use crate::errors::{FormationError, ValidationError};
 use crate::io::commands::ProductCommand;
@@ -92,8 +92,14 @@ impl TryFrom<(ProductId, ProductCommand)> for Product {
 impl Process for Product {}
 
 impl WithPersistence for Product {
-    fn aggregate_id(&self) -> impl ToEntityId {
-        self.id
+    fn aggregate_id(&self) -> EntityId {
+        self.id.to_entity_id()
+    }
+}
+
+impl WithStreamPublisher for Product {
+    fn aggregate_id(&self) -> EntityId {
+        self.id.to_entity_id()
     }
 }
 
@@ -121,13 +127,17 @@ impl Publisher<ProductCommand> for Product {
                 image,
             }),
             ProductCommand::RenameProductName { new } => {
-                Ok(ProductEvent::RenamedProductName { new })
+                Ok(ProductEvent::RenamedProductName { id: self.id, new })
             }
-            ProductCommand::EditProductDesc { new } => Ok(ProductEvent::EditedProductDesc { new }),
+            ProductCommand::EditProductDesc { new } => { 
+                Ok(ProductEvent::EditedProductDesc { id: self.id, new }) 
+            }
             ProductCommand::ChangeProductPrice { new } => {
-                Ok(ProductEvent::ChangedProductPrice { new })
+                Ok(ProductEvent::ChangedProductPrice { id: self.id, new })
             }
-            ProductCommand::Delete => Ok(ProductEvent::Deleted),
+            ProductCommand::Delete => { 
+                Ok(ProductEvent::Deleted { id: self.id }) 
+            }
         }
     }
 }
@@ -136,18 +146,19 @@ impl Publisher<ProductCommand> for Product {
 impl Applicator<ProductEvent> for Product {
     async fn apply(&mut self, event: ProductEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
+        WithStreamPublisher::publish(self, &event, ctx).await;
 
         match event {
-            ProductEvent::RenamedProductName { new } => {
+            ProductEvent::RenamedProductName { new, .. } => {
                 self.name = new;
             }
-            ProductEvent::EditedProductDesc { new } => {
+            ProductEvent::EditedProductDesc { new, .. } => {
                 self.desc = new;
             }
-            ProductEvent::ChangedProductPrice { new } => {
+            ProductEvent::ChangedProductPrice { new, .. } => {
                 self.price = new;
             }
-            ProductEvent::Deleted => {
+            ProductEvent::Deleted { .. } => {
                 ctx.poison_pill().await;
             }
             _ => {}
@@ -182,16 +193,16 @@ impl Projection<ProductEvent> for Product {
 
     async fn apply(&mut self, event: ProductEvent) -> Result<(), Self::Rejection> {
         match event {
-            ProductEvent::RenamedProductName { new } => {
+            ProductEvent::RenamedProductName { new, .. } => {
                 self.name = new;
             }
-            ProductEvent::EditedProductDesc { new } => {
+            ProductEvent::EditedProductDesc { new, .. } => {
                 self.desc = new;
             }
-            ProductEvent::ChangedProductPrice { new } => {
+            ProductEvent::ChangedProductPrice { new, .. } => {
                 self.price = new;
             }
-            ProductEvent::Deleted => {
+            ProductEvent::Deleted { .. } => {
                 panic!("This entity has a delete event issued.");
             }
             _ => {}

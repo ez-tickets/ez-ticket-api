@@ -48,9 +48,12 @@ where
         let event = refs.publish(cmd).await
             .change_context_lazy(|| ApplicationError::Process)?
             .change_context_lazy(|| ApplicationError::Kernel)?;
+
+        refs.apply(event.clone()).await
+            .change_context_lazy(|| ApplicationError::Process)?;
         
         if let CategoryEvent::Created { .. } | CategoryEvent::Deleted { .. } = event {
-            let cmd = CategoriesCommand::try_from(event.clone())
+            let cmd = CategoriesCommand::try_from(event)
                 .change_context_lazy(|| ApplicationError::Formation)?;
             
             self.categories_command_service()
@@ -58,9 +61,6 @@ where
                 .await
                 .change_context_lazy(|| ApplicationError::Process)?;
         }
-        
-        refs.apply(event).await
-            .change_context_lazy(|| ApplicationError::Process)?;
         
         Ok(())
     }

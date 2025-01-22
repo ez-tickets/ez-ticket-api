@@ -556,8 +556,10 @@ dependencies = [
  "async-trait",
  "error-stack",
  "kernel",
+ "nitinol",
  "sqlx",
  "thiserror 2.0.3",
+ "tokio",
 ]
 
 [[package]]
@@ -1294,9 +1296,10 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 [[package]]
 name = "nitinol"
 version = "0.2.0-alpha"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=dfb18a09fcdbeabaadb6ca308c9149a29f86b409#dfb18a09fcdbeabaadb6ca308c9149a29f86b409"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "nitinol-core",
+ "nitinol-eventstream",
  "nitinol-macro",
  "nitinol-persistence",
  "nitinol-process",
@@ -1307,7 +1310,7 @@ dependencies = [
 [[package]]
 name = "nitinol-core"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=dfb18a09fcdbeabaadb6ca308c9149a29f86b409#dfb18a09fcdbeabaadb6ca308c9149a29f86b409"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "async-trait",
  "futures-util",
@@ -1316,9 +1319,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitinol-eventstream"
+version = "0.1.0"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
+dependencies = [
+ "async-trait",
+ "nitinol-core",
+ "nitinol-process",
+ "nitinol-projection",
+ "nitinol-protocol",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "nitinol-macro"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=dfb18a09fcdbeabaadb6ca308c9149a29f86b409#dfb18a09fcdbeabaadb6ca308c9149a29f86b409"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "darling",
  "quote",
@@ -1328,7 +1345,7 @@ dependencies = [
 [[package]]
 name = "nitinol-persistence"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=dfb18a09fcdbeabaadb6ca308c9149a29f86b409#dfb18a09fcdbeabaadb6ca308c9149a29f86b409"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "async-trait",
  "nitinol-core",
@@ -1340,7 +1357,7 @@ dependencies = [
 [[package]]
 name = "nitinol-process"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=dfb18a09fcdbeabaadb6ca308c9149a29f86b409#dfb18a09fcdbeabaadb6ca308c9149a29f86b409"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "async-channel",
  "async-trait",
@@ -1353,7 +1370,7 @@ dependencies = [
 [[package]]
 name = "nitinol-projection"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=dfb18a09fcdbeabaadb6ca308c9149a29f86b409#dfb18a09fcdbeabaadb6ca308c9149a29f86b409"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "nitinol-core",
  "nitinol-protocol",
@@ -1364,7 +1381,7 @@ dependencies = [
 [[package]]
 name = "nitinol-protocol"
 version = "0.1.0"
-source = "git+https://github.com/HalsekiRaika/nitinol?rev=dfb18a09fcdbeabaadb6ca308c9149a29f86b409#dfb18a09fcdbeabaadb6ca308c9149a29f86b409"
+source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "async-trait",
  "nitinol-core",

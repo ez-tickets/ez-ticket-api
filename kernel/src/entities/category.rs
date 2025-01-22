@@ -14,8 +14,8 @@ use nitinol::process::persistence::WithPersistence;
 use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
 use nitinol::projection::resolver::{Mapper, ResolveMapping};
-use nitinol::ToEntityId;
-
+use nitinol::{EntityId, ToEntityId};
+use nitinol::process::eventstream::WithStreamPublisher;
 use crate::entities::product::ProductId;
 use crate::errors::{FormationError, ValidationError};
 use crate::io::commands::CategoryCommand;
@@ -65,8 +65,14 @@ impl TryFrom<(CategoryId, CategoryCommand)> for Category {
 impl Process for Category {}
 
 impl WithPersistence for Category {
-    fn aggregate_id(&self) -> impl ToEntityId {
-        self.id
+    fn aggregate_id(&self) -> EntityId {
+        self.id.to_entity_id()
+    }
+}
+
+impl WithStreamPublisher for Category {
+    fn aggregate_id(&self) -> EntityId {
+        self.id.to_entity_id()
     }
 }
 
@@ -82,7 +88,7 @@ impl Publisher<CategoryCommand> for Category {
     ) -> Result<Self::Event, Self::Rejection> {
         let ev = match command {
             CategoryCommand::Create { name } => CategoryEvent::Created { id: self.id, name },
-            CategoryCommand::Rename { new } => CategoryEvent::Renamed { new },
+            CategoryCommand::Rename { new } => CategoryEvent::Renamed { id: self.id, new },
             CategoryCommand::Delete => CategoryEvent::Deleted { id: self.id },
             CategoryCommand::AddProduct { id } => {
                 if self.products.iter().any(|(_, p)| p == &id) {
@@ -90,7 +96,7 @@ impl Publisher<CategoryCommand> for Category {
                         .attach_printable("Product already exists in category"));
                 }
 
-                CategoryEvent::AddedProduct { id }
+                CategoryEvent::AddedProduct { id, category: self.id, ordering: self.products.len() as i64 }
             }
             CategoryCommand::RemoveProduct { id } => {
                 if !self.products.iter().any(|(_, p)| p == &id) {
@@ -98,7 +104,7 @@ impl Publisher<CategoryCommand> for Category {
                         .attach_printable("Product does not exist in category"));
                 }
 
-                CategoryEvent::RemovedProduct { id }
+                CategoryEvent::RemovedProduct { id, category: self.id }
             }
             CategoryCommand::ChangeProductOrdering { new } => {
                 let older = self.products.values().copied().collect::<HashSet<_>>();
@@ -122,23 +128,23 @@ impl Publisher<CategoryCommand> for Category {
 impl Applicator<CategoryEvent> for Category {
     async fn apply(&mut self, event: CategoryEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
+        WithStreamPublisher::publish(self, &event, ctx).await;
         
         tracing::debug!("Applying event: {:?}", event);
         match event {
             CategoryEvent::Created { name, .. } => {
                 self.name = name;
             }
-            CategoryEvent::Renamed { new } => {
+            CategoryEvent::Renamed { new, .. } => {
                 self.name = new;
             }
             CategoryEvent::Deleted { .. } => {
                 ctx.poison_pill().await;
             }
-            CategoryEvent::AddedProduct { id } => {
-                let next = self.products.len() as i64;
-                self.products.insert(next, id);
+            CategoryEvent::AddedProduct { id, ordering, .. } => {
+                self.products.insert(ordering, id);
             }
-            CategoryEvent::RemovedProduct { id } => {
+            CategoryEvent::RemovedProduct { id, .. } => {
                 self.products.retain(|_, p| p != &id);
             }
             CategoryEvent::ChangedProductOrdering { new } => {
@@ -168,17 +174,17 @@ impl Projection<CategoryEvent> for Category {
 
     async fn apply(&mut self, event: CategoryEvent) -> Result<(), Self::Rejection> {
         match event {
-            CategoryEvent::Renamed { new } => {
+            CategoryEvent::Renamed { new, .. } => {
                 self.name = new;
             }
             CategoryEvent::Deleted { .. } => {
                 panic!("This entity has a delete event issued.");
             }
-            CategoryEvent::AddedProduct { id } => {
+            CategoryEvent::AddedProduct { id, .. } => {
                 let next = self.products.len() as i64;
                 self.products.insert(next, id);
             }
-            CategoryEvent::RemovedProduct { id } => {
+            CategoryEvent::RemovedProduct { id, .. } => {
                 self.products.retain(|_, p| p != &id);
             }
             CategoryEvent::ChangedProductOrdering { new } => {

@@ -9,8 +9,8 @@ use nitinol::process::persistence::WithPersistence;
 use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
 use nitinol::projection::resolver::{Mapper, ResolveMapping};
-use nitinol::ToEntityId;
-
+use nitinol::{EntityId, ToEntityId};
+use nitinol::process::eventstream::WithStreamPublisher;
 use crate::entities::category::CategoryId;
 use crate::errors::ValidationError;
 use crate::io::commands::CategoriesCommand;
@@ -26,9 +26,8 @@ impl Categories {
     
     fn apply(&mut self, event: CategoriesEvent) {
         match event {
-            CategoriesEvent::AddedCategory { id } => {
-                let next = self.categories.len() as i64;
-                self.categories.insert(next, id);
+            CategoriesEvent::AddedCategory { id, ordering } => {
+                self.categories.insert(ordering, id);
             }
             CategoriesEvent::RemovedCategory { id } => {
                 self.categories.retain(|_, exist| exist != &id);
@@ -49,8 +48,14 @@ impl AsRef<BTreeMap<i64, CategoryId>> for Categories {
 impl Process for Categories {}
 
 impl WithPersistence for Categories {
-    fn aggregate_id(&self) -> impl ToEntityId {
-        Categories::ID
+    fn aggregate_id(&self) -> EntityId {
+        Categories::ID.to_entity_id()
+    }
+}
+
+impl WithStreamPublisher for Categories {
+    fn aggregate_id(&self) -> EntityId {
+        Categories::ID.to_entity_id()
     }
 }
 
@@ -70,7 +75,7 @@ impl Publisher<CategoriesCommand> for Categories {
                     return Err(Report::new(ValidationError)
                         .attach_printable(format!("Category={id} already exists")));
                 }
-                Ok(CategoriesEvent::AddedCategory { id })
+                Ok(CategoriesEvent::AddedCategory { id, ordering: self.categories.len() as i64 })
             }
             CategoriesCommand::RemoveCategory { id } => {
                 if !self.categories.iter().any(|(_, exist)| exist.eq(&id)) {
@@ -104,6 +109,8 @@ impl Publisher<CategoriesCommand> for Categories {
 impl Applicator<CategoriesEvent> for Categories {
     async fn apply(&mut self, event: CategoriesEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
+        WithStreamPublisher::publish(self, &event, ctx).await;
+        
         tracing::debug!("Applying event: {:?}", event);
         Categories::apply(self, event);
         tracing::debug!("State: {:?}", self);

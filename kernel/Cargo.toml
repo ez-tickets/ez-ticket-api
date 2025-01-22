@@ -21,6 +21,14 @@ async-trait = { workspace = true }
 
 tracing = "^0.1"
 
-nitinol = { workspace = true, features = ["process", "persistence", "projection", "macro"] }
+[dependencies.nitinol]
+workspace = true
+features = [
+  "process", 
+  "persistence", 
+  "projection", 
+  "macro", 
+  "eventstream"
+]
 
 [dev-dependencies]

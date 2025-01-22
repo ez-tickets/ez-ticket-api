@@ -15,3 +15,10 @@ error-stack = { workspace = true }
 async-trait = { workspace = true }
 
 kernel = { path = "../kernel" }
+
+[dependencies.nitinol]
+workspace = true
+features = ["eventstream"]
+
+[dev-dependencies]
+tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }

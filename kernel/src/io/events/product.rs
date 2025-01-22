@@ -14,13 +14,18 @@ pub enum ProductEvent {
         image: ImageId,
     },
     RenamedProductName {
+        id: ProductId,
         new: ProductName,
     },
     EditedProductDesc {
+        id: ProductId,
         new: ProductDesc,
     },
     ChangedProductPrice {
+        id: ProductId,
         new: ProductPrice,
     },
-    Deleted,
+    Deleted {
+        id: ProductId,
+    },
 }

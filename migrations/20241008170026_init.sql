@@ -1,14 +1,14 @@
-CREATE TABLE categories(
-    id   TEXT NOT NULL PRIMARY KEY,
-    name TEXT NOT NULL
-);
-
 CREATE TABLE images(
     id    TEXT NOT NULL PRIMARY KEY,
     image BLOB NOT NULL
 );
 
-CREATE TABLE catalogs(
+CREATE TABLE categories(
+    id   TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE products(
     id    TEXT    NOT NULL PRIMARY KEY,
     name  TEXT    NOT NULL,
     image TEXT    NOT NULL,
@@ -18,15 +18,15 @@ CREATE TABLE catalogs(
     FOREIGN KEY (image) REFERENCES images (id) ON DELETE CASCADE
 );
 
-CREATE TABLE category_catalogs_ordering(
-    catalog  TEXT    NOT NULL,
+CREATE TABLE category_products_ordering(
+    product  TEXT    NOT NULL,
     category TEXT    NOT NULL,
     ordering INTEGER NOT NULL,
 
-    PRIMARY KEY (catalog, category),
+    PRIMARY KEY (product, category),
     UNIQUE (category, ordering),
 
-    FOREIGN KEY (catalog) REFERENCES catalogs (id) ON DELETE CASCADE,
+    FOREIGN KEY (product) REFERENCES products (id) ON DELETE CASCADE,
     FOREIGN KEY (category) REFERENCES categories (id) ON DELETE CASCADE
 );
 
