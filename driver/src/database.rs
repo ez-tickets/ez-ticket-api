@@ -2,6 +2,7 @@ mod product;
 mod category;
 
 pub use self::product::*;
+pub use self::category::*;
 
 use std::str::FromStr;
 use std::time::Duration;

@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use error_stack::{Report, ResultExt};
-use nitinol::eventstream::EventSubscriber;
-use nitinol::eventstream::resolver::{DecodeMapping, SubscriptionMapper};
-use sqlx::{SqliteConnection, SqlitePool};
 use kernel::io::events::{CategoriesEvent, CategoryEvent};
+use nitinol::eventstream::resolver::{DecodeMapping, SubscriptionMapper};
+use nitinol::eventstream::EventSubscriber;
+use sqlx::{SqliteConnection, SqlitePool};
+
 use crate::errors::FailedBuildReadModel;
 
 #[derive(Clone)]
@@ -30,7 +31,7 @@ impl EventSubscriber<CategoryEvent> for CategoryQueryModelService {
     type Error = Report<FailedBuildReadModel>;
 
     async fn on(&mut self, event: CategoryEvent) -> Result<(), Self::Error> {
-        let mut con = self.pool.acquire().await
+        let mut con = self.pool.begin().await
             .change_context_lazy(|| FailedBuildReadModel)?;
         match event {
             CategoryEvent::Created { .. } => { 
@@ -42,10 +43,18 @@ impl EventSubscriber<CategoryEvent> for CategoryQueryModelService {
             CategoryEvent::Deleted { .. } => {
                 InternalCategoryQueryModelService::delete_category(event, &mut con).await?
             }
-            CategoryEvent::AddedProduct { .. } => {}
-            CategoryEvent::RemovedProduct { .. } => {}
-            CategoryEvent::ChangedProductOrdering { .. } => {}
+            CategoryEvent::AddedProduct { .. } => {
+                InternalCategoryQueryModelService::add_product(event, &mut con).await?
+            }
+            CategoryEvent::RemovedProduct { .. } => {
+                InternalCategoryQueryModelService::remove_product(event, &mut con).await?
+            }
+            CategoryEvent::ChangedProductOrdering { .. } => {
+                InternalCategoryQueryModelService::change_ordering_product(event, &mut con).await?
+            }
         }
+        con.commit().await
+            .change_context_lazy(|| FailedBuildReadModel)?;
         Ok(())
     }
 }
@@ -178,13 +187,13 @@ impl InternalCategoryQueryModelService {
             .await
             .change_context_lazy(|| FailedBuildReadModel)?;
         
-        for (category, ordering) in new {
+        for (ordering, category) in new {
             // language=sqlite
             sqlx::query(r#"
                 INSERT INTO categories_ordering(category, ordering) VALUES (?, ?)
             "#)
-                .bind(category)
-                .bind(ordering.as_ref())
+                .bind(category.as_ref())
+                .bind(ordering)
                 .execute(&mut *con)
                 .await
                 .change_context_lazy(|| FailedBuildReadModel)?;
@@ -208,9 +217,418 @@ impl InternalCategoryQueryModelService {
         "#)
             .bind(id.as_ref())
             .bind(category.as_ref())
+            .bind(ordering)
             .execute(&mut *con)
             .await
             .change_context_lazy(|| FailedBuildReadModel)?;
+        
+        Ok(())
+    }
+
+    pub async fn remove_product(
+        remove: CategoryEvent,
+        con: &mut SqliteConnection
+    ) -> Result<(), Report<FailedBuildReadModel>> {
+        let CategoryEvent::RemovedProduct { id, category } = remove else {
+            return Err(Report::new(FailedBuildReadModel)
+                .attach_printable("Invalid event type"));
+        };
+
+        // language=sqlite
+        sqlx::query(r#"
+            DELETE FROM category_products_ordering WHERE product = ? AND category = ?
+        "#)
+            .bind(id.as_ref())
+            .bind(category.as_ref())
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
+
+        Ok(())
+    }
+
+    pub async fn change_ordering_product(
+        update: CategoryEvent,
+        con: &mut SqliteConnection
+    ) -> Result<(), Report<FailedBuildReadModel>> {
+        let CategoryEvent::ChangedProductOrdering { category, new } = update else {
+            return Err(Report::new(FailedBuildReadModel)
+                .attach_printable("Invalid event type"));
+        };
+
+        // language=sqlite
+        sqlx::query(r#"
+            DELETE FROM category_products_ordering WHERE category = ?;
+        "#)
+            .bind(category.as_ref())
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
+
+        for (ordering, product) in new {
+            // language=sqlite
+            sqlx::query(r#"
+                INSERT INTO category_products_ordering(product, category, ordering) VALUES (?, ?, ?)
+            "#)
+                .bind(product.as_ref())
+                .bind(category.as_ref())
+                .bind(ordering)
+                .execute(&mut *con)
+                .await
+                .change_context_lazy(|| FailedBuildReadModel)?;
+        }
+
+        Ok(())
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+    use error_stack::Report;
+    use tracing_subscriber::EnvFilter;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+    use kernel::entities::category::{CategoryId, CategoryName};
+    use kernel::entities::product::ProductId;
+    
+    use super::*;
+    use crate::errors::test::UnrecoverableError;
+
+    async fn create_category(id: CategoryId, ordering: i64, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let create_category_event = CategoryEvent::Created { id, name: CategoryName::new("Test").unwrap() };
+        let register_category_event = CategoriesEvent::AddedCategory { id, ordering, };
+
+        InternalCategoryQueryModelService::create_category(create_category_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        InternalCategoryQueryModelService::register_category(register_category_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_create_category() -> Result<(), Report<UnrecoverableError>> {
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let category_id = CategoryId::default();
+
+        create_category(category_id, 0, &mut transaction).await?;
+
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    async fn rename_category(id: CategoryId, new: CategoryName, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let rename_category_event = CategoryEvent::Renamed { id, new };
+
+        InternalCategoryQueryModelService::rename_category(rename_category_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_rename_category() -> Result<(), Report<UnrecoverableError>> {
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let category_id = CategoryId::default();
+
+        create_category(category_id, 0, &mut transaction).await?;
+        rename_category(category_id, CategoryName::new("Test 2").unwrap(), &mut transaction).await?;
+
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    async fn delete_category(id: CategoryId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let delete_category_event = CategoryEvent::Deleted { id };
+
+        InternalCategoryQueryModelService::delete_category(delete_category_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_category() -> Result<(), Report<UnrecoverableError>> {
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let category_id = CategoryId::default();
+
+        create_category(category_id, 0, &mut transaction).await?;
+        delete_category(category_id, &mut transaction).await?;
+
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    async fn change_ordering_category(new: BTreeMap<i64, CategoryId>, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let change_ordering_category_event = CategoriesEvent::ChangedOrdering { new };
+
+        InternalCategoryQueryModelService::change_ordering_category(change_ordering_category_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_change_ordering_category() -> Result<(), Report<UnrecoverableError>> {
+        tracing_subscriber::registry()
+            .with(EnvFilter::new("trace"))
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let sets = vec![
+            (0, CategoryId::default()),
+            (1, CategoryId::default()),
+            (2, CategoryId::default()),
+            (3, CategoryId::default()),
+            (4, CategoryId::default()),
+            (5, CategoryId::default()),
+        ].into_iter()
+            .collect::<BTreeMap<i64, CategoryId>>();
+
+        for (ordering, id) in sets.clone() {
+            create_category(id, ordering, &mut transaction).await?;
+        }
+
+        let orderings = sets.clone().into_keys().rev().collect::<Vec<i64>>();
+        let categories = sets.clone().into_values().collect::<Vec<CategoryId>>();
+
+        let new = orderings.into_iter()
+            .zip(categories.into_iter())
+            .collect::<BTreeMap<i64, CategoryId>>();
+
+        change_ordering_category(new, &mut transaction).await?;
+
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+    
+    async fn add_product(
+        id: ProductId, 
+        category: CategoryId, 
+        ordering: i64, 
+        con: &mut SqliteConnection
+    ) -> Result<(), Report<UnrecoverableError>> {
+        let add_product_event = CategoryEvent::AddedProduct { id, category, ordering };
+        
+        crate::database::product::test::register_product(id, con).await?;
+        InternalCategoryQueryModelService::add_product(add_product_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_add_product() -> Result<(), Report<UnrecoverableError>> {
+        tracing_subscriber::registry()
+            .with(EnvFilter::new("trace"))
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+        
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let product_id = ProductId::default();
+        let category_id = CategoryId::default();
+
+        create_category(category_id, 0, &mut transaction).await?;
+        add_product(product_id, category_id, 0, &mut transaction).await?;
+
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+    
+    async fn remove_product(
+        id: ProductId, 
+        category: CategoryId, 
+        con: &mut SqliteConnection
+    ) -> Result<(), Report<UnrecoverableError>> {
+        let remove_product_event = CategoryEvent::RemovedProduct { id, category };
+
+        InternalCategoryQueryModelService::remove_product(remove_product_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_remove_product() -> Result<(), Report<UnrecoverableError>> {
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let product_id = ProductId::default();
+        let category_id = CategoryId::default();
+
+        create_category(category_id, 0, &mut transaction).await?;
+        add_product(product_id, category_id, 0, &mut transaction).await?;
+        remove_product(product_id, category_id, &mut transaction).await?;
+
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+    
+    
+    async fn change_ordering_product(
+        category: CategoryId, 
+        new: BTreeMap<i64, ProductId>, 
+        con: &mut SqliteConnection
+    ) -> Result<(), Report<UnrecoverableError>> {
+        let change_ordering_product_event = CategoryEvent::ChangedProductOrdering { category, new };
+
+        InternalCategoryQueryModelService::change_ordering_product(change_ordering_product_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+    
+    // noinspection DuplicatedCode
+    #[tokio::test]
+    async fn test_change_ordering_product() -> Result<(), Report<UnrecoverableError>> {
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let category_id = CategoryId::default();
+
+        create_category(category_id, 0, &mut transaction).await?;
+        
+        let sets = vec![
+            (0, ProductId::default()),
+            (1, ProductId::default()),
+            (2, ProductId::default()),
+            (3, ProductId::default()),
+            (4, ProductId::default()),
+            (5, ProductId::default()),
+        ].into_iter()
+            .collect::<BTreeMap<i64, ProductId>>();
+        
+        for (ordering, product_id) in sets.clone() {
+            add_product(product_id, category_id, ordering, &mut transaction).await?;
+        }
+
+        let orderings = sets.clone().into_keys().rev().collect::<Vec<i64>>();
+        let products = sets.clone().into_values().collect::<Vec<ProductId>>();
+
+        let new = orderings.into_iter()
+            .zip(products.into_iter())
+            .collect::<BTreeMap<i64, ProductId>>();
+
+        change_ordering_product(category_id, new, &mut transaction).await?;
+
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        Ok(())
+    }
+
+    // noinspection DuplicatedCode
+    #[tokio::test]
+    async fn test_all() -> Result<(), Report<UnrecoverableError>> {
+        tracing_subscriber::registry()
+            .with(EnvFilter::new("trace"))
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+
+
+        let con = crate::database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let mut transaction = con.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+
+        let category_id = CategoryId::default();
+
+        let sets = vec![
+            (0, category_id),
+            (1, CategoryId::default()),
+            (2, CategoryId::default()),
+            (3, CategoryId::default()),
+            (4, CategoryId::default()),
+            (5, CategoryId::default()),
+        ].into_iter()
+            .collect::<BTreeMap<i64, CategoryId>>();
+
+        for (ordering, id) in sets.clone() {
+            create_category(id, ordering, &mut transaction).await?;
+        }
+
+        let orderings = sets.clone().into_keys().rev().collect::<Vec<i64>>();
+        let categories = sets.clone().into_values().collect::<Vec<CategoryId>>();
+
+        let new = orderings.into_iter()
+            .zip(categories.into_iter())
+            .collect::<BTreeMap<i64, CategoryId>>();
+
+        change_ordering_category(new, &mut transaction).await?;
+
+        rename_category(category_id, CategoryName::new("Test 2").unwrap(), &mut transaction).await?;
+        
+        let sets = vec![
+            (0, ProductId::default()),
+            (1, ProductId::default()),
+            (2, ProductId::default()),
+            (3, ProductId::default()),
+            (4, ProductId::default()),
+            (5, ProductId::default()),
+        ].into_iter()
+            .collect::<BTreeMap<i64, ProductId>>();
+
+        for (ordering, product_id) in sets.clone() {
+            add_product(product_id, category_id, ordering, &mut transaction).await?;
+        }
+
+        let orderings = sets.clone().into_keys().rev().collect::<Vec<i64>>();
+        let products = sets.clone().into_values().collect::<Vec<ProductId>>();
+
+        let new = orderings.into_iter()
+            .zip(products.into_iter())
+            .collect::<BTreeMap<i64, ProductId>>();
+
+        change_ordering_product(category_id, new, &mut transaction).await?;
+        
+        delete_category(category_id, &mut transaction).await?;
         
         Ok(())
     }

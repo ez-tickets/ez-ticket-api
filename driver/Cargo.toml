@@ -8,7 +8,7 @@ license = { workspace = true }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sqlx = { version = "=0.8", features = ["runtime-tokio", "migrate", "postgres", "sqlite", "uuid"] }
+sqlx = { version = "=0.8", features = ["runtime-tokio", "migrate", "sqlite", "uuid"] }
 
 thiserror = { workspace = true }
 error-stack = { workspace = true }
@@ -22,3 +22,4 @@ features = ["eventstream"]
 
 [dev-dependencies]
 tokio = { version = "^1", features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { version = "^0.3", features = ["env-filter"] }

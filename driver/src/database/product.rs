@@ -29,14 +29,24 @@ impl EventSubscriber<ProductEvent> for ProductReadModelService {
     type Error = Report<FailedBuildReadModel>;
 
     async fn on(&mut self, event: ProductEvent) -> Result<(), Self::Error> {
-        let mut con = self.pool.acquire().await
+        let mut con = self.pool.begin().await
             .change_context_lazy(|| FailedBuildReadModel)?;
         match event {
-            ProductEvent::Registered { .. } => InternalProductReadModelService::create(event, &mut con).await?,
-            ProductEvent::RenamedProductName { .. } => InternalProductReadModelService::update_name(event, &mut con).await?,
-            ProductEvent::EditedProductDesc { .. } => {}
-            ProductEvent::ChangedProductPrice { .. } => {}
-            ProductEvent::Deleted { .. } => {}
+            ProductEvent::Registered { .. } => { 
+                InternalProductReadModelService::create(event, &mut con).await? 
+            }
+            ProductEvent::RenamedProductName { .. } => { 
+                InternalProductReadModelService::update_name(event, &mut con).await? 
+            }
+            ProductEvent::EditedProductDesc { .. } => {
+                InternalProductReadModelService::update_desc(event, &mut con).await?
+            }
+            ProductEvent::ChangedProductPrice { .. } => {
+                InternalProductReadModelService::update_price(event, &mut con).await?
+            }
+            ProductEvent::Deleted { .. } => {
+                InternalProductReadModelService::delete(event, &mut con).await?
+            }
         }
         Ok(())
     }
@@ -53,11 +63,20 @@ impl InternalProductReadModelService {
         
         // language=sqlite
         sqlx::query(r#"
+            INSERT INTO images(id, image) VALUES (?, ?)
+        "#)
+            .bind(image.id().as_ref())
+            .bind::<&Vec<u8>>(image.image().as_ref())
+            .execute(&mut *con).await
+            .change_context_lazy(|| FailedBuildReadModel)?;
+        
+        // language=sqlite
+        sqlx::query(r#"
             INSERT INTO products(id, name, image, desc, price) VALUES (?, ?, ?, ?, ?)
         "#)
             .bind(id.as_ref())
             .bind(name.as_ref())
-            .bind(image.as_ref())
+            .bind(image.id().as_ref())
             .bind(desc.as_ref())
             .bind(price.as_ref())
             .execute(&mut *con)
@@ -84,45 +103,262 @@ impl InternalProductReadModelService {
         
         Ok(())
     }
+    
+    pub async fn update_desc(update: ProductEvent, con: &mut SqliteConnection) -> Result<(), Report<FailedBuildReadModel>> {
+        let ProductEvent::EditedProductDesc { id, new } = update else {
+            return Err(Report::new(FailedBuildReadModel).attach_printable("Invalid event type"));
+        };
+        
+        // language=sqlite
+        sqlx::query(r#"
+            UPDATE products SET desc = ? WHERE id = ?
+        "#)
+            .bind(new.as_ref())
+            .bind(id.as_ref())
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
+        
+        Ok(())
+    }
+    
+    pub async fn update_price(update: ProductEvent, con: &mut SqliteConnection) -> Result<(), Report<FailedBuildReadModel>> {
+        let ProductEvent::ChangedProductPrice { id, new } = update else {
+            return Err(Report::new(FailedBuildReadModel).attach_printable("Invalid event type"));
+        };
+        
+        // language=sqlite
+        sqlx::query(r#"
+            UPDATE products SET price = ? WHERE id = ?
+        "#)
+            .bind(new.as_ref())
+            .bind(id.as_ref())
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
+        
+        Ok(())
+    }
+    
+    pub async fn delete(delete: ProductEvent, con: &mut SqliteConnection) -> Result<(), Report<FailedBuildReadModel>> {
+        let ProductEvent::Deleted { id } = delete else {
+            return Err(Report::new(FailedBuildReadModel).attach_printable("Invalid event type"));
+        };
+        
+        // language=sqlite
+        sqlx::query(r#"
+            DELETE FROM products WHERE id = ?
+        "#)
+            .bind(id.as_ref())
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
+        
+        Ok(())
+    }
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
     use error_stack::{Report, ResultExt};
-    use kernel::entities::image::ImageId;
+    use tracing_subscriber::EnvFilter;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+    use kernel::entities::image::{Image, ImageId};
     use kernel::entities::product::*;
     
     use super::*;
     use crate::database::{self};
     use crate::errors::test::UnrecoverableError;
     
-    async fn create_image(con: &mut SqliteConnection) -> Result<ImageId, Report<UnrecoverableError>> {
-        let id = ImageId::default();
-        let bin: Vec<u8> = vec![0x01];
+    pub async fn register_product(id: ProductId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let image: Vec<u8> = include_bytes!("../../tests/resources/test_image.jpg").to_vec();
         
+        let create = ProductEvent::Registered {
+            id,
+            name: ProductName::new("test"),
+            desc: ProductDesc::new("test description"),
+            price: ProductPrice::new(100).change_context_lazy(|| UnrecoverableError)?,
+            image: Image::new(ImageId::from(id), image),
+        };
         
+        InternalProductReadModelService::create(create, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
         
-        Ok(id)
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_create_product() -> Result<(), Report<UnrecoverableError>> {
+    async fn test_register_product() -> Result<(), Report<UnrecoverableError>> {
         let pool = database::init("sqlite:../query.db").await
             .change_context_lazy(|| UnrecoverableError)?;
         let mut con = pool.begin().await
             .change_context_lazy(|| UnrecoverableError)?;
         
-        let create = ProductEvent::Registered {
-            id: ProductId::default(),
-            name: ProductName::new("test"),
-            desc: ProductDesc::new("test"),
-            price: ProductPrice::new(100).change_context_lazy(|| UnrecoverableError)?,
-            image: ImageId::default(),
-        };
+        let product_id = ProductId::default();
         
-        InternalProductReadModelService::create(create, &mut con).await
+        register_product(product_id, &mut con).await
             .change_context_lazy(|| UnrecoverableError)?;
         
+        con.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        Ok(())
+    }
+    
+    pub async fn rename_product(id: ProductId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let update = ProductEvent::RenamedProductName {
+            id,
+            new: ProductName::new("new name"),
+        };
+        
+        InternalProductReadModelService::update_name(update, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_rename_product() -> Result<(), Report<UnrecoverableError>> {
+        let pool = database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+        let mut con = pool.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        let product_id = ProductId::default();
+        
+        register_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        rename_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        con.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        Ok(())
+    }
+    
+    pub async fn edit_product_desc(id: ProductId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let update = ProductEvent::EditedProductDesc {
+            id,
+            new: ProductDesc::new("new description"),
+        };
+        
+        InternalProductReadModelService::update_desc(update, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_edit_product_desc() -> Result<(), Report<UnrecoverableError>> {
+        let pool = database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+        let mut con = pool.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        let product_id = ProductId::default();
+        
+        register_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        edit_product_desc(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        con.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        Ok(())
+    }
+    
+    pub async fn change_product_price(id: ProductId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let update = ProductEvent::ChangedProductPrice {
+            id,
+            new: ProductPrice::new(200).change_context_lazy(|| UnrecoverableError)?,
+        };
+        
+        InternalProductReadModelService::update_price(update, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_change_product_price() -> Result<(), Report<UnrecoverableError>> {
+        let pool = database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+        let mut con = pool.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        let product_id = ProductId::default();
+        
+        register_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        change_product_price(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        con.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        Ok(())
+    }
+    
+    pub async fn delete_product(id: ProductId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let delete = ProductEvent::Deleted { id };
+        
+        InternalProductReadModelService::delete(delete, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_delete_product() -> Result<(), Report<UnrecoverableError>> {
+        let pool = database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+        let mut con = pool.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        let product_id = ProductId::default();
+        
+        register_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        delete_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        con.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_all() -> Result<(), Report<UnrecoverableError>> {
+        tracing_subscriber::registry()
+            .with(EnvFilter::new("trace"))
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+        
+        
+        let pool = database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+        let mut con = pool.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        let product_id = ProductId::default();
+        
+        register_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        rename_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        edit_product_desc(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        change_product_price(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        delete_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
         
         con.rollback().await
             .change_context_lazy(|| UnrecoverableError)?;
