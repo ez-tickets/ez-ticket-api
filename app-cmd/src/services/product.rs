@@ -11,7 +11,8 @@ impl<T> ProductCommandService for T
 where 
     T
     : DependOnProcessManager
-    + DependOnEventProjector {}
+    + DependOnEventProjector
+{}
 
 
 pub trait DependOnProductCommandService: 'static + Sync + Send {

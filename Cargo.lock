@@ -560,6 +560,7 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.3",
  "tokio",
+ "tracing-subscriber",
 ]
 
 [[package]]

@@ -1,11 +1,20 @@
+#[allow(unused_imports)]
 use error_stack::{Report, ResultExt};
+#[allow(unused_imports)]
 use nitinol::eventstream::EventStream;
+#[allow(unused_imports)]
 use nitinol::process::eventstream::EventStreamExtension;
+#[allow(unused_imports)]
 use nitinol::process::manager::ProcessManager;
+#[allow(unused_imports)]
 use nitinol::process::persistence::PersistenceExtension;
+#[allow(unused_imports)]
 use nitinol::projection::EventProjector;
+#[allow(unused_imports)]
 use nitinol::protocol::adapter::inmemory::InMemoryEventStore;
+#[allow(unused_imports)]
 use nitinol::protocol::io::ReadProtocol;
+#[allow(unused_imports)]
 use app_cmd::adapter::{DependOnEventProjector, DependOnProcessManager};
 
 #[derive(Debug, thiserror::Error)]

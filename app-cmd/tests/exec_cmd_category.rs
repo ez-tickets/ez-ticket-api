@@ -47,7 +47,8 @@ async fn create_category(framework: &TestFramework) -> Result<(), Report<Unrecov
     let service = framework.category_command_service();
     
     let cmd = CategoryCommand::Create {
-        name: CategoryName::new("test").change_context_lazy(|| UnrecoverableError)?,
+        name: CategoryName::new("test")
+            .change_context_lazy(|| UnrecoverableError)?,
     };
     
     service.execute(None, cmd).await
@@ -72,7 +73,8 @@ async fn rename_category(id: CategoryId, framework: &TestFramework) -> Result<()
     let service = framework.category_command_service();
     
     let cmd = CategoryCommand::Rename {
-        new: CategoryName::new("test2").change_context_lazy(|| UnrecoverableError)?,
+        new: CategoryName::new("test2")
+            .change_context_lazy(|| UnrecoverableError)?,
     };
     
     service.execute(id, cmd).await
@@ -90,7 +92,8 @@ async fn test_rename_category() -> Result<(), Report<UnrecoverableError>> {
     let create_event = extract_first_event(&framework).await?;
     
     let CategoryEvent::Created { id, .. } = create_event else {
-        return Err(Report::new(UnrecoverableError).attach_printable("Event is not a Created event"));
+        return Err(Report::new(UnrecoverableError)
+            .attach_printable("Event is not a Created event"));
     };
     
     rename_category(id, &framework).await?;
@@ -118,7 +121,8 @@ async fn test_delete_category() -> Result<(), Report<UnrecoverableError>> {
     let create_event = extract_first_event(&framework).await?;
     
     let CategoryEvent::Created { id, .. } = create_event else {
-        return Err(Report::new(UnrecoverableError).attach_printable("Event is not a Created event"));
+        return Err(Report::new(UnrecoverableError)
+            .attach_printable("Event is not a Created event"));
     };
     
     delete_category(id, &framework).await?;
@@ -152,7 +156,8 @@ async fn test_add_product_to_category() -> Result<(), Report<UnrecoverableError>
     let create_event = extract_first_event(&framework).await?;
     
     let CategoryEvent::Created { id, .. } = create_event else {
-        return Err(Report::new(UnrecoverableError).attach_printable("Event is not a Created event"));
+        return Err(Report::new(UnrecoverableError)
+            .attach_printable("Event is not a Created event"));
     };
     
     add_product_to_category(id, ProductId::default(), &framework).await?;
@@ -186,7 +191,8 @@ async fn test_remove_product_from_category() -> Result<(), Report<UnrecoverableE
     let create_event = extract_first_event(&framework).await?;
     
     let CategoryEvent::Created { id, .. } = create_event else {
-        return Err(Report::new(UnrecoverableError).attach_printable("Event is not a Created event"));
+        return Err(Report::new(UnrecoverableError)
+            .attach_printable("Event is not a Created event"));
     };
     
     let product = ProductId::default();
@@ -221,7 +227,8 @@ async fn test_change_ordering_product_in_category() -> Result<(), Report<Unrecov
     let create_event = extract_first_event(&framework).await?;
     
     let CategoryEvent::Created { id, .. } = create_event else {
-        return Err(Report::new(UnrecoverableError).attach_printable("Event is not a Created event"));
+        return Err(Report::new(UnrecoverableError)
+            .attach_printable("Event is not a Created event"));
     };
     
     let product_1 = ProductId::default();
@@ -252,7 +259,8 @@ async fn test_all() -> Result<(), Report<UnrecoverableError>> {
     let create_event = extract_first_event(&framework).await?;
     
     let CategoryEvent::Created { id, .. } = create_event else {
-        return Err(Report::new(UnrecoverableError).attach_printable("Event is not a Created event"));
+        return Err(Report::new(UnrecoverableError)
+            .attach_printable("Event is not a Created event"));
     };
     
     rename_category(id, &framework).await?;

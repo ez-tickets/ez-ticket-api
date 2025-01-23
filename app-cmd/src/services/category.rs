@@ -3,6 +3,7 @@ use error_stack::{Report, ResultExt};
 use kernel::entities::category::{Category, CategoryId};
 use kernel::io::commands::{CategoriesCommand, CategoryCommand};
 use kernel::io::events::CategoryEvent;
+
 use crate::adapter::{self, DependOnEventProjector, DependOnProcessManager};
 use crate::errors::ApplicationError;
 use crate::services::categories::{CategoriesCommandService, DependOnCategoriesCommandService};
@@ -11,7 +12,8 @@ impl<T> CategoryCommandService for T
 where T
       : DependOnProcessManager 
       + DependOnEventProjector
-      + DependOnCategoriesCommandService {}
+      + DependOnCategoriesCommandService 
+{}
 
 pub trait DependOnCategoryCommandService: 'static + Sync + Send {
     type CategoryCommandService: CategoryCommandService;
