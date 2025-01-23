@@ -1,4 +1,4 @@
-use crate::entities::image::ImageId;
+use crate::entities::image::Image;
 use crate::entities::product::{ProductDesc, ProductId, ProductName, ProductPrice};
 use nitinol::macros::Event;
 use serde::{Deserialize, Serialize};
@@ -11,7 +11,7 @@ pub enum ProductEvent {
         name: ProductName,
         desc: ProductDesc,
         price: ProductPrice,
-        image: ImageId,
+        image: Image
     },
     RenamedProductName {
         id: ProductId,

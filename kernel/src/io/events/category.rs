@@ -13,5 +13,5 @@ pub enum CategoryEvent {
 
     AddedProduct { id: ProductId, category: CategoryId, ordering: i64 },
     RemovedProduct { id: ProductId, category: CategoryId },
-    ChangedProductOrdering { new: BTreeMap<i64, ProductId> },
+    ChangedProductOrdering { category: CategoryId, new: BTreeMap<i64, ProductId> },
 }

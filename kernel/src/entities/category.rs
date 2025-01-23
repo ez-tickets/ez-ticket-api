@@ -116,7 +116,7 @@ impl Publisher<CategoryCommand> for Category {
                     ));
                 }
 
-                CategoryEvent::ChangedProductOrdering { new }
+                CategoryEvent::ChangedProductOrdering { category: self.id, new }
             }
         };
 
@@ -147,7 +147,7 @@ impl Applicator<CategoryEvent> for Category {
             CategoryEvent::RemovedProduct { id, .. } => {
                 self.products.retain(|_, p| p != &id);
             }
-            CategoryEvent::ChangedProductOrdering { new } => {
+            CategoryEvent::ChangedProductOrdering { new, .. } => {
                 self.products = new;
             }
         }
@@ -180,14 +180,13 @@ impl Projection<CategoryEvent> for Category {
             CategoryEvent::Deleted { .. } => {
                 panic!("This entity has a delete event issued.");
             }
-            CategoryEvent::AddedProduct { id, .. } => {
-                let next = self.products.len() as i64;
-                self.products.insert(next, id);
+            CategoryEvent::AddedProduct { id, ordering, .. } => {
+                self.products.insert(ordering, id);
             }
             CategoryEvent::RemovedProduct { id, .. } => {
                 self.products.retain(|_, p| p != &id);
             }
-            CategoryEvent::ChangedProductOrdering { new } => {
+            CategoryEvent::ChangedProductOrdering { new, .. } => {
                 self.products = new;
             }
             _ => return Ok(()),
