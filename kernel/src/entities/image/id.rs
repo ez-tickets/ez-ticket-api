@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use uuid::Uuid;
+use crate::entities::product::ProductId;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct ImageId(Uuid);
@@ -11,6 +12,12 @@ impl ImageId {
     }
 }
 
+impl From<ProductId> for ImageId {
+    fn from(value: ProductId) -> Self {
+        Self(value.into())
+    }
+}
+ 
 impl AsRef<Uuid> for ImageId {
     fn as_ref(&self) -> &Uuid {
         &self.0
@@ -20,12 +27,6 @@ impl AsRef<Uuid> for ImageId {
 impl From<ImageId> for Uuid {
     fn from(id: ImageId) -> Self {
         id.0
-    }
-}
-
-impl Default for ImageId {
-    fn default() -> Self {
-        Self(Uuid::new_v4())
     }
 }
 

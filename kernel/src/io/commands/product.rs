@@ -1,4 +1,3 @@
-use crate::entities::image::ImageId;
 use crate::entities::product::{ProductDesc, ProductName, ProductPrice};
 use nitinol::macros::Command;
 
@@ -18,7 +17,7 @@ pub enum ProductCommand {
         name: ProductName,
         desc: ProductDesc,
         price: ProductPrice,
-        image: ImageId,
+        image: Vec<u8>,
     },
     RenameProductName {
         new: ProductName,
