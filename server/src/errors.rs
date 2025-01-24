@@ -1,16 +1,13 @@
-use error_stack::Context;
-use std::fmt::{Display, Formatter};
-
 #[derive(Debug, thiserror::Error)]
-pub enum ServerError {}
-
-#[derive(Debug)]
-pub struct UnrecoverableError;
-
-impl Display for UnrecoverableError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "An unrecoverable fatal error occurred.")
-    }
+pub enum ServerError {
+    #[error("violated validation")]
+    Validation,
+    #[error("failed to parse request")]
+    InvalidFormat,
+    #[error("Invalid request format")]
+    UnknownFormat,
 }
 
-impl Context for UnrecoverableError {}
+#[derive(Debug, thiserror::Error)]
+#[error("An unrecoverable fatal error occurred.")]
+pub struct UnrecoverableError;

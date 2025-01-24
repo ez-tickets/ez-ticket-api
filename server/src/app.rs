@@ -2,34 +2,24 @@ use std::sync::Arc;
 use std::ops::Deref;
 
 use error_stack::{Report, ResultExt};
-use nitinol::process::extension::Extensions as ProcessExtension;
-use nitinol::process::persistence::extension::PersistenceExtension;
-use nitinol::process::registry::Registry as ProcessRegistry;
-use nitinol::projection::Projector as EventProjector;
-use nitinol::protocol::io::ReadProtocol;
-use application_command::{
-    adapter::{
-        DependOnEventProjector,
-        DependOnProcessExtension,
-        DependOnProcessRegistry
-    },
-    services::commands::{
-        DependOnCategoriesCommandExecutor,
-        DependOnCategoryCommandExecutor,
-        DependOnProductCommandExecutor,
-        DependOnProductRegisterService
-    },
-    services::content::DependOnContentRegisterService
+use nitinol::eventstream::EventStream;
+use nitinol::process::eventstream::EventStreamExtension;
+use nitinol::process::manager::ProcessManager;
+use nitinol::process::persistence::PersistenceExtension;
+use nitinol::projection::EventProjector;
+use nitinol::protocol::adapter::sqlite::SqliteEventStore;
+use app_cmd::adapter::{DependOnEventProjector, DependOnProcessManager};
+use app_cmd::services::categories::DependOnCategoriesCommandService;
+use app_cmd::services::category::DependOnCategoryCommandService;
+use app_cmd::services::product::DependOnProductCommandService;
+use app_query::models::{
+    DependOnGetAllCategoriesQueryService, 
+    DependOnGetAllProductQueryService, 
+    DependOnGetProductImageQueryService, 
+    DependOnGetProductQueryService
 };
-use application_query::{
-    adaptor::DependOnEventQueryProjector,
-    models::DependOnCategoryQueryService
-};
-use application_query::models::DependOnProductQueryService;
-use driver::database::{init_sqlite, setup_eventstore};
-use driver::repositories::ImageDataBase;
-use kernel::repositories::DependOnImageRepository;
-
+use driver::database::{CategoryQueryModelService, ProductReadModelService};
+use driver::database::query::{CategoryQueryService, ProductQueryService};
 use crate::errors::UnrecoverableError;
 
 pub struct AppModule {
@@ -51,135 +41,110 @@ impl Deref for AppModule {
 }
 
 pub struct Handler {
-    image: ImageDataBase,
-    
-    registry: ProcessRegistry,
-    extension: ProcessExtension,
+    manager: ProcessManager,
     projector: EventProjector,
+    query_category: CategoryQueryService,
+    query_product: ProductQueryService,
 }
 
 impl AppModule {
     pub async fn setup() -> Result<AppModule, Report<UnrecoverableError>> {
-        let pool = init_sqlite("sqlite://.database/level.db").await
+        let query = driver::database::init("sqlite:../.database/query.db").await
             .change_context_lazy(|| UnrecoverableError)?;
-        let event_store = setup_eventstore("sqlite://.database/journal.db").await
+        
+        let eventstore = SqliteEventStore::setup("sqlite:../.database/journal.db").await
             .change_context_lazy(|| UnrecoverableError)?;
-
-        let reader = ReadProtocol::new(event_store.clone());
-
-        let registry = ProcessRegistry::default();
-        let mut installer = ProcessExtension::builder();
-
-        installer.install(PersistenceExtension::new(event_store.clone()))
-            .change_context_lazy(|| UnrecoverableError)?;
-
-        let extension = installer.build();
-
-        let projector = EventProjector::new(reader);
+        
+        let eventstream = EventStream::default();
+        
+        eventstream.subscribe(CategoryQueryModelService::new(query.clone())).await;
+        eventstream.subscribe(ProductReadModelService::new(query.clone())).await;
+        
+        let manager = ProcessManager::with_extension(|ext| {
+            ext.install(PersistenceExtension::new(eventstore.clone()))?
+                .install(EventStreamExtension::new(eventstream))
+        }).change_context_lazy(|| UnrecoverableError)?;
+        
+        let projector = EventProjector::new(eventstore);
+        
+        let query_category = CategoryQueryService::new(query.clone());
+        let query_product = ProductQueryService::new(query);
 
         Ok(AppModule {
             inner: Arc::new(Handler {
-                image: ImageDataBase::new(pool),
-                registry,
-                extension,
+                manager,
                 projector,
+                query_category,
+                query_product,
             })
         })
     }
 }
 
-// --- Base ---------------------------------------
+impl DependOnProcessManager for Handler {
+    fn process_manager(&self) -> &ProcessManager {
+        &self.manager
+    }
+}
 
 impl DependOnEventProjector for Handler {
-    fn projector(&self) -> &EventProjector {
+    fn event_projector(&self) -> &EventProjector {
         &self.projector
     }
 }
 
-impl DependOnProcessRegistry for Handler {
-    fn process_registry(&self) -> ProcessRegistry {
-        self.registry.clone()
-    }
-}
+impl DependOnCategoryCommandService for Handler {
+    type CategoryCommandService = Self;
 
-impl DependOnProcessExtension for Handler {
-    fn process_extension(&self) -> ProcessExtension {
-        self.extension.clone()
-    }
-}
-
-
-// --- Command Module -----------------------------
-
-impl DependOnCategoryCommandExecutor for Handler {
-    type CategoryCommandExecutor = Handler;
-
-    fn category_command_executor(&self) -> &Self::CategoryCommandExecutor {
+    fn category_command_service(&self) -> &Self::CategoryCommandService {
         self
     }
 }
 
-impl DependOnCategoriesCommandExecutor for Handler {
-    type CategoriesCommandExecutor = Handler;
-    fn categories_command_executor(&self) -> &Self::CategoriesCommandExecutor {
+impl DependOnCategoriesCommandService for Handler {
+    type CategoriesCommandService = Self;
+
+    fn categories_command_service(&self) -> &Self::CategoriesCommandService {
         self
     }
 }
 
-impl DependOnProductRegisterService for Handler {
-    type ProductRegisterService = Handler;
+impl DependOnProductCommandService for Handler {
+    type ProductCommandService = Self;
 
-    fn product_register_service(&self) -> &Self::ProductRegisterService {
+    fn product_command_service(&self) -> &Self::ProductCommandService {
         self
     }
 }
 
-impl DependOnProductCommandExecutor for Handler {
-    type ProductCommandExecutor = Handler;
+impl DependOnGetAllCategoriesQueryService for Handler {
+    type GetAllCategoriesQueryService = CategoryQueryService;
 
-    fn product_command_executor(&self) -> &Self::ProductCommandExecutor {
-        self
+    fn get_all_categories_query_service(&self) -> &Self::GetAllCategoriesQueryService {
+        &self.query_category
     }
 }
 
-impl DependOnContentRegisterService for Handler {
-    type ContentRegisterService = Self;
+impl DependOnGetAllProductQueryService for Handler {
+    type GetAllProductQueryService = ProductQueryService;
 
-    fn content_register_service(&self) -> &Self::ContentRegisterService {
-        self
+    fn get_all_product_query_service(&self) -> &Self::GetAllProductQueryService {
+        &self.query_product
     }
 }
 
-// --- Repository Module --------------------------
-impl DependOnImageRepository for Handler {
-    type ImageRepository = ImageDataBase;
+impl DependOnGetProductQueryService for Handler {
+    type GetProductQueryService = ProductQueryService;
 
-    fn image_repository(&self) -> &Self::ImageRepository {
-        &self.image
+    fn get_product_query_service(&self) -> &Self::GetProductQueryService {
+        &self.query_product
     }
 }
 
+impl DependOnGetProductImageQueryService for Handler {
+    type GetProductImageQueryService = ProductQueryService;
 
-// --- Query Module -------------------------------
-
-impl DependOnEventQueryProjector for Handler {
-    fn projector(&self) -> &EventProjector {
-        &self.projector
-    }
-}
-
-impl DependOnCategoryQueryService for Handler {
-    type CategoryQueryService = Handler;
-
-    fn category_query_service(&self) -> &Self::CategoryQueryService {
-        self
-    }
-}
-
-impl DependOnProductQueryService for Handler {
-    type ProductQueryService = Handler;
-
-    fn product_query_service(&self) -> &Self::ProductQueryService {
-        self
+    fn get_product_image_query_service(&self) -> &Self::GetProductImageQueryService {
+        &self.query_product
     }
 }

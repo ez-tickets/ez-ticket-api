@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct ProductName(String);
 
 impl ProductName {
-    pub fn new(name: impl Into<String>) -> ProductName {
+    pub fn new(name: impl Into<String>) -> Self {
         Self(name.into())
     }
 }
@@ -16,7 +16,7 @@ impl AsRef<str> for ProductName {
 }
 
 impl From<ProductName> for String {
-    fn from(value: ProductName) -> Self {
-        value.0
+    fn from(name: ProductName) -> Self {
+        name.0
     }
 }

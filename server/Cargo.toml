@@ -8,7 +8,7 @@ license = { workspace = true }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "=0.7", features = ["json", "query", "multipart"] }
+axum = { version = "=0.8", features = ["json", "query", "multipart"] }
 mime = "^0.3"
 
 tokio = { version = "^1", features = ["full"] }
@@ -27,12 +27,21 @@ error-stack = { workspace = true }
 
 async-trait = { workspace = true }
 
-nitinol = { workspace = true, features = ["protocol", "process", "process-ext", "persistence"] }
-
-application-command = { path = "../application-command" }
-application-query = { path = "../application-query" }
+app-cmd = { path = "../app-cmd" }
+app-query = { path = "../app-query" }
 driver = { path = "../driver" }
 kernel = { path = "../kernel" }
+
+[dependencies.nitinol]
+workspace = true
+features = [
+  "process",
+  "persistence",
+  "projection",
+  "protocol",
+  "sqlite",
+  "eventstream",
+]
 
 [dev-dependencies]
 serde_json = "^1.0"

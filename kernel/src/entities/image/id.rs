@@ -1,17 +1,23 @@
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use uuid::Uuid;
-use crate::entities::{CatalogId, ProductId};
+use crate::entities::product::ProductId;
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct ImageId(Uuid);
 
 impl ImageId {
-    pub fn new(id: impl Into<Uuid>) -> ImageId {
+    pub fn new(id: impl Into<Uuid>) -> Self {
         Self(id.into())
     }
 }
 
+impl From<ProductId> for ImageId {
+    fn from(value: ProductId) -> Self {
+        Self(value.into())
+    }
+}
+ 
 impl AsRef<Uuid> for ImageId {
     fn as_ref(&self) -> &Uuid {
         &self.0
@@ -19,25 +25,13 @@ impl AsRef<Uuid> for ImageId {
 }
 
 impl From<ImageId> for Uuid {
-    fn from(content: ImageId) -> Uuid {
-        content.0
+    fn from(id: ImageId) -> Self {
+        id.0
     }
 }
 
 impl Display for ImageId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Image({})", self.0)
-    }
-}
-
-impl From<ProductId> for ImageId {
-    fn from(id: ProductId) -> Self {
-        Self(id.into())
-    }
-}
-
-impl From<CatalogId> for ImageId {
-    fn from(id: CatalogId) -> Self {
-        Self(id.into())
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
