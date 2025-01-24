@@ -18,17 +18,17 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
         .route("/", get(categories::categories)
             .post(categories::register)
             .put(categories::change_ordering))
-        .route("/:category_id", get(products::get_products_in_category)
+        .route("/{category_id}", get(products::get_products_in_category)
             .post(categories::add_product)
             .put(categories::change_product_ordering)
             .patch(categories::update_name)
             .delete(categories::delete))
-        .route("/:category_id/:product_id", delete(categories::remove_product));
+        .route("/{category_id}/{product_id}", delete(categories::remove_product));
     
     let products = Router::new()
         .route("/", get(products::get_all_products)
             .post(products::register))
-        .route("/:product_id", get(products::product_details)
+        .route("/{product_id}", get(products::product_details)
             .patch(products::patch)
             .delete(products::delete));
     
