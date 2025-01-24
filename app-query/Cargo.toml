@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-kernel = { path = "../kernel" }
 tracing = "^0.1"
 
 thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }
+
+sqlx = { version = "^0.8", default-features = false, features = ["macros", "sqlite", "derive"] }
+serde = { version = "^1", features = ["derive"] }
+uuid = { version = "^1", features = ["serde"] }

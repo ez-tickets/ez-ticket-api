@@ -82,9 +82,11 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "error-stack",
- "kernel",
+ "serde",
+ "sqlx",
  "thiserror 2.0.3",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -553,6 +555,7 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 name = "driver"
 version = "0.1.0"
 dependencies = [
+ "app-query",
  "async-trait",
  "error-stack",
  "kernel",
@@ -1385,7 +1388,9 @@ version = "0.1.0"
 source = "git+https://github.com/HalsekiRaika/nitinol?rev=4c701f20ba35a06967b618ba88dcbeeeb3499b53#4c701f20ba35a06967b618ba88dcbeeeb3499b53"
 dependencies = [
  "async-trait",
+ "dotenvy",
  "nitinol-core",
+ "sqlx",
  "thiserror 2.0.3",
  "time",
  "tokio",
@@ -1992,6 +1997,7 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "app-cmd",
+ "app-query",
  "async-trait",
  "axum",
  "driver",
@@ -2000,6 +2006,7 @@ dependencies = [
  "image",
  "kernel",
  "mime",
+ "nitinol",
  "serde",
  "serde_json",
  "thiserror 2.0.3",
@@ -2183,6 +2190,7 @@ dependencies = [
  "smallvec",
  "sqlformat",
  "thiserror 1.0.64",
+ "time",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -2267,6 +2275,7 @@ dependencies = [
  "sqlx-core",
  "stringprep",
  "thiserror 1.0.64",
+ "time",
  "tracing",
  "uuid",
  "whoami",
@@ -2306,6 +2315,7 @@ dependencies = [
  "sqlx-core",
  "stringprep",
  "thiserror 1.0.64",
+ "time",
  "tracing",
  "uuid",
  "whoami",
@@ -2330,6 +2340,7 @@ dependencies = [
  "serde",
  "serde_urlencoded",
  "sqlx-core",
+ "time",
  "tracing",
  "url",
  "uuid",

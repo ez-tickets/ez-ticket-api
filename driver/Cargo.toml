@@ -16,6 +16,8 @@ async-trait = { workspace = true }
 
 kernel = { path = "../kernel" }
 
+app-query = { path = "../app-query" }
+
 [dependencies.nitinol]
 workspace = true
 features = ["eventstream"]

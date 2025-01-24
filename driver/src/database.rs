@@ -1,5 +1,6 @@
 mod product;
 mod category;
+pub mod query;
 
 pub use self::product::*;
 pub use self::category::*;
