@@ -113,6 +113,10 @@ impl Publisher<ProductCommand> for Product {
             ProductCommand::ChangeProductPrice { new } => {
                 Ok(ProductEvent::ChangedProductPrice { id: self.id, new })
             }
+            ProductCommand::ChangeProductImage { image } => {
+                let image = Image::new(ImageId::from(self.id), image);
+                Ok(ProductEvent::ChangedProductImage { id: self.id, image })
+            }
             ProductCommand::Delete => { 
                 Ok(ProductEvent::Deleted { id: self.id }) 
             }

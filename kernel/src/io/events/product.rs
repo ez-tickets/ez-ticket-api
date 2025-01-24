@@ -25,6 +25,10 @@ pub enum ProductEvent {
         id: ProductId,
         new: ProductPrice,
     },
+    ChangedProductImage {
+        id: ProductId,
+        image: Image,
+    },
     Deleted {
         id: ProductId,
     },

@@ -44,6 +44,9 @@ impl EventSubscriber<ProductEvent> for ProductReadModelService {
             ProductEvent::ChangedProductPrice { .. } => {
                 InternalProductReadModelService::update_price(event, &mut con).await?
             }
+            ProductEvent::ChangedProductImage { .. } => {
+                InternalProductReadModelService::update_image(event, &mut con).await?
+            }
             ProductEvent::Deleted { .. } => {
                 InternalProductReadModelService::delete(event, &mut con).await?
             }
@@ -132,6 +135,24 @@ impl InternalProductReadModelService {
             UPDATE products SET price = ? WHERE id = ?
         "#)
             .bind(new.as_ref())
+            .bind(id.as_ref())
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
+        
+        Ok(())
+    }
+    
+    pub async fn update_image(update: ProductEvent, con: &mut SqliteConnection) -> Result<(), Report<FailedBuildReadModel>> {
+        let ProductEvent::ChangedProductImage { id, image } = update else {
+            return Err(Report::new(FailedBuildReadModel).attach_printable("Invalid event type"));
+        };
+        
+        // language=sqlite
+        sqlx::query(r#"
+            UPDATE images SET image = ? WHERE id = ?
+        "#)
+            .bind::<&Vec<u8>>(image.image().as_ref())
             .bind(id.as_ref())
             .execute(&mut *con)
             .await
@@ -301,6 +322,40 @@ pub(crate) mod test {
         Ok(())
     }
     
+    pub async fn change_product_image(id: ProductId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+        let image: Vec<u8> = include_bytes!("../../tests/resources/test_image.jpg").to_vec();
+        
+        let update = ProductEvent::ChangedProductImage {
+            id,
+            image: Image::new(ImageId::from(id), image),
+        };
+        
+        InternalProductReadModelService::update_image(update, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_change_product_image() -> Result<(), Report<UnrecoverableError>> {
+        let pool = database::init("sqlite:../query.db").await
+            .change_context_lazy(|| UnrecoverableError)?;
+        let mut con = pool.begin().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        let product_id = ProductId::default();
+        
+        register_product(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        change_product_image(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        con.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
+        Ok(())
+    }
+    
     pub async fn delete_product(id: ProductId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
         let delete = ProductEvent::Deleted { id };
         
@@ -355,6 +410,9 @@ pub(crate) mod test {
             .change_context_lazy(|| UnrecoverableError)?;
         
         change_product_price(product_id, &mut con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        
+        change_product_image(product_id, &mut con).await
             .change_context_lazy(|| UnrecoverableError)?;
         
         delete_product(product_id, &mut con).await

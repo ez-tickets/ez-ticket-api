@@ -28,5 +28,8 @@ pub enum ProductCommand {
     ChangeProductPrice {
         new: ProductPrice,
     },
+    ChangeProductImage {
+        image: Vec<u8>,
+    },
     Delete,
 }
