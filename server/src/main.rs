@@ -1,4 +1,4 @@
-use axum::routing::get;
+use axum::routing::{delete, get};
 use axum::Router;
 use error_stack::{Report, ResultExt};
 use tokio::net::TcpListener;
@@ -8,32 +8,37 @@ use server::errors::UnrecoverableError;
 
 #[tokio::main]
 async fn main() -> Result<(), Report<UnrecoverableError>> {
-    server::logging::init();
+    let _guard = server::logging::init();
+    
     let app = server::AppModule::setup().await?;
 
     tracing::info!("starting ez-ticket-api.");
-    
-    let order = Router::new()
-        .route("/", get(|| async { "todo" }));
 
-    let category = Router::new()
-        .route("/", get(category::categories)
-            .post(category::register)
-            .patch(category::update_name)
-            .delete(category::delete));
+    let categories = Router::new()
+        .route("/", get(categories::categories)
+            .post(categories::register)
+            .put(categories::change_ordering))
+        .route("/:category_id", get(products::get_products_in_category)
+            .post(categories::add_product)
+            .put(categories::change_product_ordering)
+            .patch(categories::update_name)
+            .delete(categories::delete))
+        .route("/:category_id/:product_id", delete(categories::remove_product));
     
-    let content = Router::new()
-        .route("/", get(content::image)
-            .patch(content::update));
+    let products = Router::new()
+        .route("/", get(products::get_all_products)
+            .post(products::register))
+        .route("/:product_id", get(products::product_details)
+            .patch(products::patch)
+            .delete(products::delete));
     
-    let catalog = Router::new()
-        .route("/", get(|| async { "todo" }));
+    let images = Router::new()
+        .route("/", get(images::get));
     
     let router = Router::new()
-        .nest("/categories", category)
-        .nest("/catalogs", catalog)
-        .nest("/contents", content)
-        .nest("/orders", order)
+        .nest("/categories", categories)
+        .nest("/products", products)
+        .nest("/images", images)
         .with_state(app);
 
     let listener = TcpListener::bind("0.0.0.0:3650")
