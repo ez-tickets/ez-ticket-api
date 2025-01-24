@@ -1,7 +1,5 @@
-pub mod category;
-pub mod product;
-pub mod content;
+pub mod categories;
 
+pub mod products;
+pub mod images;
 mod request;
-mod response;
-mod catalog;

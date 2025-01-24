@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use uuid::Uuid;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct CategoryId(Uuid);
 
 impl CategoryId {
@@ -25,12 +25,12 @@ impl From<CategoryId> for Uuid {
 
 impl Default for CategoryId {
     fn default() -> Self {
-        Self(Uuid::new_v4())
+        Self::new(Uuid::new_v4())
     }
 }
 
 impl Display for CategoryId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "CategoryId({})", self.0)
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

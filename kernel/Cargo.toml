@@ -10,13 +10,25 @@ license = { workspace = true }
 [dependencies]
 destructure = "0.5.6"
 
-nitinol = { workspace = true, features = ["process", "projection", "persistence"] }
-flexbuffers = "2.0.0"
-
 serde = { version = "=1", features = ["derive"] }
+serde_json = "^1"
 
 uuid = { version = "=1", features = ["v4", "serde"] }
 
 thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }
+
+tracing = "^0.1"
+
+[dependencies.nitinol]
+workspace = true
+features = [
+  "process", 
+  "persistence", 
+  "projection", 
+  "macro", 
+  "eventstream"
+]
+
+[dev-dependencies]
