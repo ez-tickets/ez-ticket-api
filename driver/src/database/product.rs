@@ -51,6 +51,8 @@ impl EventSubscriber<ProductEvent> for ProductReadModelService {
                 InternalProductReadModelService::delete(event, &mut con).await?
             }
         }
+        con.commit().await
+            .change_context_lazy(|| FailedBuildReadModel)?;
         Ok(())
     }
 }
