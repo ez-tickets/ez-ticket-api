@@ -6,16 +6,19 @@ publish = false
 license = { workspace = true }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+apidoc = ["utoipa", "utoipa-swagger-ui"]
 
 [dependencies]
 axum = { version = "=0.8", features = ["json", "query", "multipart"] }
 mime = "^0.3"
 
 tokio = { version = "^1", features = ["full"] }
-futures-util = "^0.3"
+
+utoipa = { version = "=5", features = ["axum_extras"], optional = true }
+utoipa-swagger-ui = { version = "=9", features = ["axum", "vendored"], optional = true }
 
 serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
 image = "^0.25"
 
 tracing = { workspace = true }
@@ -24,8 +27,6 @@ tracing-appender = "=0.2"
 
 thiserror = { workspace = true }
 error-stack = { workspace = true }
-
-async-trait = { workspace = true }
 
 app-cmd = { path = "../app-cmd" }
 app-query = { path = "../app-query" }
@@ -44,4 +45,3 @@ features = [
 ]
 
 [dev-dependencies]
-serde_json = "^1.0"

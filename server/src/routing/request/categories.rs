@@ -7,6 +7,7 @@ use serde::Deserialize;
 use std::collections::BTreeSet;
 
 #[derive(Debug, Deserialize)]
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
 pub struct CreateCategory {
     name: String,
 }
@@ -22,6 +23,7 @@ impl TryFrom<CreateCategory> for CategoryCommand {
 }
 
 #[derive(Debug, Deserialize)]
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
 pub struct RenameCategory {
     name: String,
 }
@@ -65,7 +67,7 @@ impl Ord for OrderedCategory {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ChangeCategoryOrdering(BTreeMap<i64, CategoryId>);
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
 pub struct ChangeCategoryOrdering(BTreeSet<OrderedCategory>);
 
 impl TryFrom<ChangeCategoryOrdering> for CategoriesCommand {
@@ -81,7 +83,9 @@ impl TryFrom<ChangeCategoryOrdering> for CategoriesCommand {
 }
 
 #[derive(Debug, Deserialize)]
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
 pub struct AddProduct {
+    #[cfg_attr(feature = "apidoc", schema(value_type = Uuid))]
     pub product: ProductId,
 }
 
@@ -124,7 +128,7 @@ impl Ord for OrderedProduct {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ChangeProductOrdering(BTreeMap<i64, ProductId>);
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
 pub struct ChangeProductOrdering(BTreeSet<OrderedProduct>);
 
 impl TryFrom<ChangeProductOrdering> for CategoryCommand {

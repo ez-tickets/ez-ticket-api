@@ -10,9 +10,9 @@ API server application for EZ Ticket products.
 - docker
 - docker-compose
 
-### Set Config
+### Setup
 ```shell
-echo "SERVER_PORT=3650" >> .docker.env
+mkdir .database
 ```
 
 ### Run

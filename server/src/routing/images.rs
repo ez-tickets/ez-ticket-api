@@ -11,6 +11,20 @@ use kernel::entities::image::ImageId;
 
 use crate::AppModule;
 
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        get,
+        path = "/images/{image_id}",
+        params(
+            ("image_id" = Uuid, Path)
+        ),
+        responses(
+            (status = OK, content(("image/png"), ("image/jpeg"))),
+        )
+    )
+)]
 pub async fn get(
     State(app): State<AppModule>,
     Path(image_id): Path<ImageId>

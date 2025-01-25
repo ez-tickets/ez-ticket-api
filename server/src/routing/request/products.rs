@@ -6,10 +6,12 @@ use kernel::io::commands::ProductCommand;
 use crate::errors::ServerError;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
 pub struct RegisterProduct {
     name: String,
     desc: String,
     price: i64,
+    #[cfg_attr(feature = "apidoc", schema(value_type = String, format = Binary, content_media_type = "application/octet-stream"))]
     image: Vec<u8>
 }
 
@@ -69,10 +71,15 @@ impl TryFrom<RegisterProduct> for ProductCommand {
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
 pub struct PatchProduct {
+    #[cfg_attr(feature = "apidoc", schema(value_type = String))]
     pub name: Option<ProductName>,
+    #[cfg_attr(feature = "apidoc", schema(value_type = String))]
     pub desc: Option<ProductDesc>,
+    #[cfg_attr(feature = "apidoc", schema(value_type = i64))]
     pub price: Option<ProductPrice>,
+    #[cfg_attr(feature = "apidoc", schema(value_type = String, format = Binary, content_media_type = "application/octet-stream"))]
     pub image: Option<Vec<u8>>
 }
 
