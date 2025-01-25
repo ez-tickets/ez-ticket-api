@@ -15,7 +15,7 @@ COPY driver ./driver
 COPY kernel ./kernel
 COPY server ./server
 
-RUN cargo build --release
+RUN cargo build --features apidoc --release
 
 FROM gcr.io/distroless/cc-debian12
 
