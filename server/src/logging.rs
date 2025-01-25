@@ -12,7 +12,7 @@ pub fn init() -> WorkerGuard {
         .with(
             tracing_subscriber::fmt::layer()
                 .with_filter(EnvFilter::new(std::env::var("RUST_LOG").unwrap_or_else(
-                    |_| "RUST_LOG=trace".into(),
+                    |_| "trace".into(),
                 )))
                 .with_filter(LevelFilter::TRACE),
         )
