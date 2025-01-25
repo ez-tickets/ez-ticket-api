@@ -1,9 +1,9 @@
-use std::collections::BTreeMap;
+use app_query::errors::QueryError;
+use app_query::models::{AllProduct, GetAllProductQueryService, GetProductImageQueryService, GetProductQueryService, OrderedProduct, OrderedProducts, Product, ProductDetails};
 use async_trait::async_trait;
 use error_stack::{Report, ResultExt};
 use sqlx::types::Uuid;
-use app_query::errors::QueryError;
-use app_query::models::{AllProduct, GetAllProductQueryService, GetProductImageQueryService, GetProductQueryService, OrderedProduct, OrderedProducts, Product, ProductDetails};
+use std::collections::BTreeSet;
 
 #[derive(Clone)]
 pub struct ProductQueryService {
@@ -97,13 +97,7 @@ impl InternalProductQueryService {
             .await
             .change_context_lazy(|| QueryError::Driver)?;
         
-        let all = all.into_iter()
-            .map(|product| (product.ordering, Product {
-                id: product.id,
-                name: product.name,
-                price: product.price,
-            }))
-            .collect::<BTreeMap<i64, Product>>();
+        let all = all.into_iter().collect::<BTreeSet<OrderedProduct>>();
         
         Ok(OrderedProducts(all))
     }

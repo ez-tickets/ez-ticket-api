@@ -1,10 +1,10 @@
 use crate::errors::FailedQuery;
 use app_query::errors::QueryError;
-use app_query::models::{AllCategories, Category, GetAllCategoriesQueryService, OrderedCategory};
+use app_query::models::{AllCategories, GetAllCategoriesQueryService, OrderedCategory};
 use async_trait::async_trait;
 use error_stack::{Report, ResultExt};
 use sqlx::SqliteConnection;
-use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 
 #[derive(Clone)]
 pub struct CategoryQueryService {
@@ -47,11 +47,7 @@ impl InternalCategoryQueryService {
             .await
             .change_context_lazy(|| FailedQuery)?;
         
-        let categories = all.into_iter()
-            .map(|cat| {
-                (cat.ordering, Category { id: cat.id, name: cat.name })
-            })
-            .collect::<BTreeMap<i64, Category>>();
+        let categories = all.into_iter().collect::<BTreeSet<OrderedCategory>>();
         
         Ok(AllCategories(categories))
     }
