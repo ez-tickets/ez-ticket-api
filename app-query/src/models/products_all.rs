@@ -1,14 +1,16 @@
 use std::collections::{BTreeMap, HashSet};
 use error_stack::Report;
 use serde::Serialize;
+use std::collections::{BTreeSet, HashSet};
 use uuid::Uuid;
+
 use crate::errors::QueryError;
 use crate::models::Product;
 
-#[derive(Serialize, sqlx::FromRow)]
+#[derive(Serialize, sqlx::FromRow, utoipa::ToSchema)]
 pub struct AllProduct(pub HashSet<Product>);
 
-#[derive(Serialize, sqlx::FromRow)]
+#[derive(Serialize, sqlx::FromRow, utoipa::ToSchema)]
 pub struct OrderedProduct {
     pub ordering: i64,
     pub id: Uuid,
@@ -18,6 +20,8 @@ pub struct OrderedProduct {
 
 #[derive(Serialize)]
 pub struct OrderedProducts(pub BTreeMap<i64, Product>);
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct OrderedProducts(pub BTreeSet<OrderedProduct>);
 
 
 pub trait DependOnGetAllProductQueryService: 'static + Sync + Send {

@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::errors::QueryError;
 use crate::models::category::Category;
 
-#[derive(Serialize, sqlx::FromRow)]
+#[derive(Serialize, sqlx::FromRow, utoipa::ToSchema)]
 pub struct AllCategories(pub BTreeMap<i64, Category>);
 
 pub trait DependOnGetAllCategoriesQueryService: 'static + Sync + Send {
