@@ -4,7 +4,7 @@ use axum::Json;
 
 use app_cmd::services::category::{CategoryCommandService, DependOnCategoryCommandService};
 use app_cmd::services::categories::{CategoriesCommandService, DependOnCategoriesCommandService};
-use app_query::models::{AllCategories, DependOnGetAllCategoriesQueryService, GetAllCategoriesQueryService};
+use app_query::models::{AllCategories, DependOnGetAllCategoriesQueryService, DependOnGetAllProductQueryService, GetAllCategoriesQueryService, GetAllProductQueryService, OrderedProducts};
 
 use kernel::entities::category::CategoryId;
 use kernel::entities::product::ProductId;
@@ -19,6 +19,14 @@ use crate::routing::request::categories::{
     RenameCategory
 };
 
+
+#[cfg_attr(
+    feature = "apidoc", 
+    utoipa::path(
+        get,
+        path = "/categories",
+    )
+)]
 pub async fn categories(
     State(app): State<AppModule>
 ) -> Result<Json<AllCategories>, StatusCode> {
@@ -36,7 +44,49 @@ pub async fn categories(
     Ok(Json(categories))
 }
 
-pub async fn register(
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        get,
+        path = "/categories/{category_id}",
+        params(
+            ("category_id" = Uuid, Path)
+        ),
+    )
+)]
+pub async fn get_products_in_category(
+    State(app): State<AppModule>,
+    Path(category_id): Path<CategoryId>
+) -> Result<Json<OrderedProducts>, StatusCode> {
+    let res = match app.get_all_product_query_service()
+        .get_all_product_by_category(category_id.as_ref())
+        .await
+    {
+        Ok(filtered) => filtered,
+        Err(e) => {
+            tracing::error!("Failed to get product by category: {:?}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+    
+    Ok(Json(res))
+}
+
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        post,
+        path = "/categories",
+        responses(
+            (status = OK),
+            (status = BAD_REQUEST),
+            (status = INTERNAL_SERVER_ERROR)
+        )
+    )
+)]
+pub async fn create(
     State(app): State<AppModule>,
     Json(req): Json<CreateCategory>
 ) -> Result<StatusCode, StatusCode> {
@@ -54,6 +104,22 @@ pub async fn register(
     Ok(StatusCode::CREATED)
 }
 
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        patch,
+        path = "/categories/{category_id}",
+        params(
+            ("category_id" = Uuid, Path)
+        ),
+        responses(
+            (status = OK),
+            (status = BAD_REQUEST),
+            (status = INTERNAL_SERVER_ERROR)
+        )
+    )
+)]
 pub async fn update_name(
     State(app): State<AppModule>,
     Path(category_id): Path<CategoryId>,
@@ -73,6 +139,21 @@ pub async fn update_name(
     Ok(StatusCode::OK)
 }
 
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        delete,
+        path = "/categories/{category_id}",
+        params(
+            ("category_id" = Uuid, Path)
+        ),
+        responses(
+            (status = OK),
+            (status = INTERNAL_SERVER_ERROR)
+        )
+    )
+)]
 pub async fn delete(
     State(app): State<AppModule>,
     Path(dest): Path<CategoryId>
@@ -87,6 +168,20 @@ pub async fn delete(
     Ok(StatusCode::OK)
 }
 
+
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        put,
+        path = "/categories",
+        responses(
+            (status = NO_CONTENT),
+            (status = BAD_REQUEST),
+            (status = INTERNAL_SERVER_ERROR)
+        )
+    )
+)]
 pub async fn change_ordering(
     State(app): State<AppModule>,
     Json(req): Json<ChangeCategoryOrdering>
@@ -102,6 +197,23 @@ pub async fn change_ordering(
     Ok(StatusCode::NO_CONTENT)
 }
 
+
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        post,
+        path = "/categories/{category_id}",
+        params(
+            ("category_id" = Uuid, Path)
+        ),
+        responses(
+            (status = OK),
+            (status = BAD_REQUEST),
+            (status = INTERNAL_SERVER_ERROR),
+        )
+    )
+)]
 pub async fn add_product(
     State(app): State<AppModule>,
     Path(category_id): Path<CategoryId>,
@@ -118,6 +230,23 @@ pub async fn add_product(
     Ok(StatusCode::OK)
 }
 
+
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        delete,
+        path = "/categories/{category_id}/{product_id}",
+        params(
+            ("category_id" = Uuid, Path),
+            ("product_id"  = Uuid, Path)
+        ),
+        responses(
+            (status = OK),
+            (status = INTERNAL_SERVER_ERROR),
+        )
+    )
+)]
 pub async fn remove_product(
     State(app): State<AppModule>,
     Path((category_id, product_id)): Path<(CategoryId, ProductId)>,
@@ -132,6 +261,22 @@ pub async fn remove_product(
 }
 
 
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        put,
+        path = "/categories/{category_id}",
+        params(
+            ("category_id" = Uuid, Path),
+        ),
+        responses(
+            (status = OK),
+            (status = BAD_REQUEST),
+            (status = INTERNAL_SERVER_ERROR),
+        )
+    )
+)]
 pub async fn change_product_ordering(
     State(app): State<AppModule>,
     Path(category_id): Path<CategoryId>,

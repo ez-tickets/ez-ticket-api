@@ -4,41 +4,28 @@ use axum::Json;
 
 use app_cmd::services::product::{DependOnProductCommandService, ProductCommandService};
 use app_query::models::{
-    AllProduct, 
-    DependOnGetAllProductQueryService, 
-    DependOnGetProductQueryService, 
-    GetAllProductQueryService, 
+    AllProduct,
+    ProductDetails,
+    DependOnGetAllProductQueryService,
+    DependOnGetProductQueryService,
+    GetAllProductQueryService,
     GetProductQueryService, 
-    OrderedProducts, 
-    ProductDetails
 };
 
-use kernel::entities::category::CategoryId;
 use kernel::entities::product::ProductId;
 use kernel::io::commands::ProductCommand;
 
 use crate::AppModule;
 use crate::routing::request::products::{PatchProduct, RegisterProduct};
 
-pub async fn get_products_in_category(
-    State(app): State<AppModule>,
-    Path(category_id): Path<CategoryId>
-) -> Result<Json<OrderedProducts>, StatusCode> {
-    let res = match app.get_all_product_query_service()
-        .get_all_product_by_category(category_id.as_ref())
-        .await 
-    {
-        Ok(filtered) => filtered,
-        Err(e) => {
-            tracing::error!("Failed to get product by category: {:?}", e);
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    };
-    
-    Ok(Json(res))
-}
 
-
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        get,
+        path = "/products",
+    )
+)]
 pub async fn get_all_products(
     State(app): State<AppModule>,
 ) -> Result<Json<AllProduct>, StatusCode> {
@@ -57,6 +44,16 @@ pub async fn get_all_products(
 }
 
 
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        get,
+        path = "/products/{product_id}",
+        params(
+            ("product_id" = Uuid, Path)
+        )
+    )
+)]
 pub async fn product_details(
     State(app): State<AppModule>,
     Path(product_id): Path<ProductId>
@@ -76,6 +73,17 @@ pub async fn product_details(
 }
 
 
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        post,
+        path = "/products",
+        request_body(
+            content = RegisterProduct,
+            content_type = "multipart/form-data"
+        )
+    )
+)]
 pub async fn register(
     State(app): State<AppModule>,
     multipart: Multipart,
@@ -106,6 +114,20 @@ pub async fn register(
 }
 
 
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        patch,
+        path = "/products/{product_id}",
+        params(
+            ("product_id" = Uuid, Path)
+        ),
+        request_body(
+            content = PatchProduct,
+            content_type = "multipart/form-data"
+        )
+    )
+)]
 pub async fn patch(
     State(app): State<AppModule>,
     Path(product_id): Path<ProductId>,
@@ -168,6 +190,17 @@ pub async fn patch(
 }
 
 
+
+#[cfg_attr(
+    feature = "apidoc",
+    utoipa::path(
+        delete,
+        path = "/products/{product_id}",
+        params(
+            ("product_id" = Uuid, Path)
+        )
+    )
+)]
 pub async fn delete(
     State(app): State<AppModule>,
     Path(product_id): Path<ProductId>,
