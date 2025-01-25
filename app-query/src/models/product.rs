@@ -5,7 +5,7 @@ use serde::Serialize;
 use uuid::Uuid;
 use crate::errors::QueryError;
 
-#[derive(Serialize, sqlx::FromRow)]
+#[derive(Serialize, sqlx::FromRow, utoipa::ToSchema)]
 pub struct Product {
     pub id: Uuid,
     pub name: String,
@@ -29,7 +29,7 @@ impl Hash for Product {
 }
 
 
-#[derive(Serialize, sqlx::FromRow)]
+#[derive(Serialize, sqlx::FromRow, utoipa::ToSchema)]
 pub struct ProductDetails {
     pub id: Uuid,
     pub name: String,

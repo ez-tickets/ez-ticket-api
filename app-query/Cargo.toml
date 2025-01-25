@@ -6,8 +6,6 @@ publish = false
 license = { workspace = true }
 
 [dependencies]
-tracing = "^0.1"
-
 thiserror = { workspace = true }
 error-stack = { workspace = true }
 async-trait = { workspace = true }
@@ -15,3 +13,5 @@ async-trait = { workspace = true }
 sqlx = { version = "^0.8", default-features = false, features = ["macros", "sqlite", "derive"] }
 serde = { version = "^1", features = ["derive"] }
 uuid = { version = "^1", features = ["serde"] }
+
+utoipa = { version = "^5", default-features = false, features = ["macros", "uuid"] }

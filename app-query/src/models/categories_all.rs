@@ -1,12 +1,12 @@
-use std::collections::BTreeMap;
+use crate::errors::QueryError;
+use crate::models::OrderedCategory;
 use async_trait::async_trait;
 use error_stack::Report;
 use serde::Serialize;
-use crate::errors::QueryError;
-use crate::models::category::Category;
+use std::collections::BTreeSet;
 
-#[derive(Serialize, sqlx::FromRow)]
-pub struct AllCategories(pub BTreeMap<i64, Category>);
+#[derive(Serialize, sqlx::FromRow, utoipa::ToSchema)]
+pub struct AllCategories(pub BTreeSet<OrderedCategory>);
 
 pub trait DependOnGetAllCategoriesQueryService: 'static + Sync + Send {
     type GetAllCategoriesQueryService: GetAllCategoriesQueryService;

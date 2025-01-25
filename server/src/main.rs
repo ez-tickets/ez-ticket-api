@@ -33,7 +33,7 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
             .delete(products::delete));
     
     let images = Router::new()
-        .route("/", get(images::get));
+        .route("/{image_id}", get(images::get));
     
     let router = Router::new()
         .nest("/categories", categories)
