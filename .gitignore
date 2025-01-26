@@ -1,7 +1,7 @@
 /.idea
-/*logs
 */logs
 /target
 *.db*
 *.env*
-!/.database/
+*/.database
+*/.logs
