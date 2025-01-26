@@ -10,12 +10,7 @@ API server application for EZ Ticket products.
 - docker
 - docker-compose
 
-### Setup
-```shell
-mkdir .database
-```
-
 ### Run
 ```shell
-docker-compose up -d
+docker compose up -d
 ```
