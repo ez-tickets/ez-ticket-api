@@ -49,10 +49,10 @@ pub struct Handler {
 
 impl AppModule {
     pub async fn setup() -> Result<AppModule, Report<UnrecoverableError>> {
-        let query = driver::database::init("sqlite:../.database/query.db").await
+        let query = driver::database::init("sqlite:./.database/query.db").await
             .change_context_lazy(|| UnrecoverableError)?;
         
-        let eventstore = SqliteEventStore::setup("sqlite:../.database/journal.db").await
+        let eventstore = SqliteEventStore::setup("sqlite:./.database/journal.db").await
             .change_context_lazy(|| UnrecoverableError)?;
         
         let eventstream = EventStream::default();
