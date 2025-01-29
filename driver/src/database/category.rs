@@ -46,11 +46,9 @@ impl EventSubscriber<CategoryEvent> for CategoryQueryModelService {
             CategoryEvent::AddedProduct { .. } => {
                 InternalCategoryQueryModelService::add_product(event, &mut con).await?
             }
-            CategoryEvent::RemovedProduct { .. } => {
-                InternalCategoryQueryModelService::remove_product(event, &mut con).await?
-            }
+            CategoryEvent::RemovedProduct { .. } | 
             CategoryEvent::ChangedProductOrdering { .. } => {
-                InternalCategoryQueryModelService::change_ordering_product(event, &mut con).await?
+                InternalCategoryQueryModelService::invalidate_ordering_product(event, &mut con).await?
             }
         }
         con.commit().await
@@ -70,10 +68,10 @@ impl EventSubscriber<CategoriesEvent> for CategoryQueryModelService {
             CategoriesEvent::AddedCategory { .. } => { 
                 InternalCategoryQueryModelService::register_category(event, &mut con).await? 
             }
-            CategoriesEvent::ChangedOrdering { .. } => {
-                InternalCategoryQueryModelService::change_ordering_category(event, &mut con).await?
+            CategoriesEvent::ChangedOrdering { .. } | 
+            CategoriesEvent::RemovedCategory { .. } => {
+                InternalCategoryQueryModelService::invalidate_ordering_category(event, &mut con).await?
             }
-            _ => {}
         }
         Ok(())
     }
@@ -169,13 +167,16 @@ impl InternalCategoryQueryModelService {
         Ok(())
     }
     
-    pub async fn change_ordering_category(
-        update: CategoriesEvent, 
+    
+    pub async fn invalidate_ordering_category(
+        event: CategoriesEvent,
         con: &mut SqliteConnection
     ) -> Result<(), Report<FailedBuildReadModel>> {
-        let CategoriesEvent::ChangedOrdering { new } = update else {
-            return Err(Report::new(FailedBuildReadModel)
-                .attach_printable("Invalid event type"));
+        let new = match event { 
+            CategoriesEvent::ChangedOrdering { new } | 
+            CategoriesEvent::RemovedCategory { new } => new,
+            _ => return Err(Report::new(FailedBuildReadModel)
+                .attach_printable("Invalid event type")),
         };
         
         // language=sqlite
@@ -225,38 +226,18 @@ impl InternalCategoryQueryModelService {
         
         Ok(())
     }
-
-    pub async fn remove_product(
-        remove: CategoryEvent,
+    
+    pub async fn invalidate_ordering_product(
+        event: CategoryEvent,
         con: &mut SqliteConnection
     ) -> Result<(), Report<FailedBuildReadModel>> {
-        let CategoryEvent::RemovedProduct { id, category } = remove else {
-            return Err(Report::new(FailedBuildReadModel)
-                .attach_printable("Invalid event type"));
+        let (category, new) = match event { 
+            CategoryEvent::RemovedProduct { category, new } |
+            CategoryEvent::ChangedProductOrdering { category, new } => (category, new),
+            _ => return Err(Report::new(FailedBuildReadModel)
+                .attach_printable("Invalid event type")),
         };
-
-        // language=sqlite
-        sqlx::query(r#"
-            DELETE FROM category_products_ordering WHERE product = ? AND category = ?
-        "#)
-            .bind(id.as_ref())
-            .bind(category.as_ref())
-            .execute(&mut *con)
-            .await
-            .change_context_lazy(|| FailedBuildReadModel)?;
-
-        Ok(())
-    }
-
-    pub async fn change_ordering_product(
-        update: CategoryEvent,
-        con: &mut SqliteConnection
-    ) -> Result<(), Report<FailedBuildReadModel>> {
-        let CategoryEvent::ChangedProductOrdering { category, new } = update else {
-            return Err(Report::new(FailedBuildReadModel)
-                .attach_printable("Invalid event type"));
-        };
-
+        
         // language=sqlite
         sqlx::query(r#"
             DELETE FROM category_products_ordering WHERE category = ?;
@@ -355,17 +336,26 @@ mod tests {
         Ok(())
     }
 
-    async fn delete_category(id: CategoryId, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
+    async fn delete_category(id: CategoryId, invalidate: BTreeMap<i64, CategoryId>, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
         let delete_category_event = CategoryEvent::Deleted { id };
+        let delete_categories_event = CategoriesEvent::RemovedCategory { new: invalidate };
 
         InternalCategoryQueryModelService::delete_category(delete_category_event, con).await
+            .change_context_lazy(|| UnrecoverableError)?;
+        InternalCategoryQueryModelService::invalidate_ordering_category(delete_categories_event, con).await
             .change_context_lazy(|| UnrecoverableError)?;
 
         Ok(())
     }
 
+    // noinspection DuplicatedCode
     #[tokio::test]
     async fn test_delete_category() -> Result<(), Report<UnrecoverableError>> {
+        tracing_subscriber::registry()
+            .with(EnvFilter::new("trace"))
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+        
         let con = crate::database::init("sqlite:../query.db").await
             .change_context_lazy(|| UnrecoverableError)?;
 
@@ -374,8 +364,24 @@ mod tests {
 
         let category_id = CategoryId::default();
 
-        create_category(category_id, 0, &mut transaction).await?;
-        delete_category(category_id, &mut transaction).await?;
+        let sets = vec![
+            (0, category_id),
+            (1, CategoryId::default()),
+            (2, CategoryId::default()),
+        ].into_iter()
+            .collect::<BTreeMap<i64, CategoryId>>();
+
+        for (order, category) in sets.clone() {
+            create_category(category, order, &mut transaction).await?;
+        }
+
+        let new = sets.iter()
+            .filter(|(_, exist)| *exist != &category_id)
+            .enumerate()
+            .map(|(idx, (_, id))| (idx as i64, *id))
+            .collect();
+        
+        delete_category(category_id, new, &mut transaction).await?;
 
         transaction.rollback().await
             .change_context_lazy(|| UnrecoverableError)?;
@@ -386,7 +392,7 @@ mod tests {
     async fn change_ordering_category(new: BTreeMap<i64, CategoryId>, con: &mut SqliteConnection) -> Result<(), Report<UnrecoverableError>> {
         let change_ordering_category_event = CategoriesEvent::ChangedOrdering { new };
 
-        InternalCategoryQueryModelService::change_ordering_category(change_ordering_category_event, con).await
+        InternalCategoryQueryModelService::invalidate_ordering_category(change_ordering_category_event, con).await
             .change_context_lazy(|| UnrecoverableError)?;
 
         Ok(())
@@ -475,20 +481,26 @@ mod tests {
     }
     
     async fn remove_product(
-        id: ProductId, 
-        category: CategoryId, 
+        invalidate: BTreeMap<i64, ProductId>,
+        category: CategoryId,
         con: &mut SqliteConnection
     ) -> Result<(), Report<UnrecoverableError>> {
-        let remove_product_event = CategoryEvent::RemovedProduct { id, category };
+        let remove_product_event = CategoryEvent::RemovedProduct { category, new: invalidate };
 
-        InternalCategoryQueryModelService::remove_product(remove_product_event, con).await
+        InternalCategoryQueryModelService::invalidate_ordering_product(remove_product_event, con).await
             .change_context_lazy(|| UnrecoverableError)?;
 
         Ok(())
     }
     
+    // noinspection DuplicatedCode
     #[tokio::test]
     async fn test_remove_product() -> Result<(), Report<UnrecoverableError>> {
+        tracing_subscriber::registry()
+            .with(EnvFilter::new("trace"))
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+        
         let con = crate::database::init("sqlite:../query.db").await
             .change_context_lazy(|| UnrecoverableError)?;
 
@@ -499,8 +511,25 @@ mod tests {
         let category_id = CategoryId::default();
 
         create_category(category_id, 0, &mut transaction).await?;
-        add_product(product_id, category_id, 0, &mut transaction).await?;
-        remove_product(product_id, category_id, &mut transaction).await?;
+
+        let sets = vec![
+            (0, product_id),
+            (1, ProductId::default()),
+            (2, ProductId::default()),
+        ].into_iter()
+            .collect::<BTreeMap<i64, ProductId>>();
+
+        for (ordering, product_id) in sets.clone() {
+            add_product(product_id, category_id, ordering, &mut transaction).await?;
+        }
+
+        let new = sets.iter()
+            .filter(|(_, exist)| *exist != &product_id)
+            .enumerate()
+            .map(|(idx, (_, id))| (idx as i64, *id))
+            .collect();
+        
+        remove_product(new, category_id, &mut transaction).await?;
 
         transaction.rollback().await
             .change_context_lazy(|| UnrecoverableError)?;
@@ -516,7 +545,7 @@ mod tests {
     ) -> Result<(), Report<UnrecoverableError>> {
         let change_ordering_product_event = CategoryEvent::ChangedProductOrdering { category, new };
 
-        InternalCategoryQueryModelService::change_ordering_product(change_ordering_product_event, con).await
+        InternalCategoryQueryModelService::invalidate_ordering_product(change_ordering_product_event, con).await
             .change_context_lazy(|| UnrecoverableError)?;
 
         Ok(())
@@ -581,7 +610,7 @@ mod tests {
 
         let category_id = CategoryId::default();
 
-        let sets = vec![
+        let categories = vec![
             (0, category_id),
             (1, CategoryId::default()),
             (2, CategoryId::default()),
@@ -591,23 +620,25 @@ mod tests {
         ].into_iter()
             .collect::<BTreeMap<i64, CategoryId>>();
 
-        for (ordering, id) in sets.clone() {
+        for (ordering, id) in categories.clone() {
             create_category(id, ordering, &mut transaction).await?;
         }
 
-        let orderings = sets.clone().into_keys().rev().collect::<Vec<i64>>();
-        let categories = sets.clone().into_values().collect::<Vec<CategoryId>>();
+        let orderings = categories.clone().into_keys().rev().collect::<Vec<i64>>();
+        let categories = categories.clone().into_values().collect::<Vec<CategoryId>>();
 
-        let new = orderings.into_iter()
+        let new_categories = orderings.into_iter()
             .zip(categories.into_iter())
             .collect::<BTreeMap<i64, CategoryId>>();
 
-        change_ordering_category(new, &mut transaction).await?;
+        change_ordering_category(new_categories.clone(), &mut transaction).await?;
 
         rename_category(category_id, CategoryName::new("Test 2").unwrap(), &mut transaction).await?;
         
-        let sets = vec![
-            (0, ProductId::default()),
+        let product_id = ProductId::default();
+        
+        let products = vec![
+            (0, product_id),
             (1, ProductId::default()),
             (2, ProductId::default()),
             (3, ProductId::default()),
@@ -616,21 +647,38 @@ mod tests {
         ].into_iter()
             .collect::<BTreeMap<i64, ProductId>>();
 
-        for (ordering, product_id) in sets.clone() {
+        for (ordering, product_id) in products.clone() {
             add_product(product_id, category_id, ordering, &mut transaction).await?;
         }
 
-        let orderings = sets.clone().into_keys().rev().collect::<Vec<i64>>();
-        let products = sets.clone().into_values().collect::<Vec<ProductId>>();
+        let orderings = products.clone().into_keys().rev().collect::<Vec<i64>>();
+        let products = products.clone().into_values().collect::<Vec<ProductId>>();
 
         let new = orderings.into_iter()
             .zip(products.into_iter())
             .collect::<BTreeMap<i64, ProductId>>();
 
-        change_ordering_product(category_id, new, &mut transaction).await?;
+        change_ordering_product(category_id, new.clone(), &mut transaction).await?;
+
+        let new_products = new.iter()
+            .filter(|(_, exist)| *exist != &product_id)
+            .enumerate()
+            .map(|(idx, (_, id))| (idx as i64, *id))
+            .collect();
         
-        delete_category(category_id, &mut transaction).await?;
+        remove_product(new_products, category_id, &mut transaction).await?;
+
+        let new_categories = new_categories.iter()
+            .filter(|(_, exist)| *exist != &category_id)
+            .enumerate()
+            .map(|(idx, (_, id))| (idx as i64, *id))
+            .collect();
         
+        delete_category(category_id, new_categories, &mut transaction).await?;
+        
+        
+        transaction.rollback().await
+            .change_context_lazy(|| UnrecoverableError)?;
         Ok(())
     }
 }

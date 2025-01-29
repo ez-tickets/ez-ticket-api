@@ -29,9 +29,7 @@ impl Categories {
             CategoriesEvent::AddedCategory { id, ordering } => {
                 self.categories.insert(ordering, id);
             }
-            CategoriesEvent::RemovedCategory { id } => {
-                self.categories.retain(|_, exist| exist != &id);
-            }
+            CategoriesEvent::RemovedCategory { new } | 
             CategoriesEvent::ChangedOrdering { new } => {
                 self.categories = new;
             }
@@ -83,7 +81,13 @@ impl Publisher<CategoriesCommand> for Categories {
                         .attach_printable(format!("Category={id} does not exist")));
                 }
 
-                Ok(CategoriesEvent::RemovedCategory { id })
+                let new = self.categories.iter()
+                    .filter(|(_, exist)| *exist != &id)
+                    .enumerate()
+                    .map(|(idx, (_, id))| (idx as i64, *id))
+                    .collect();
+
+                Ok(CategoriesEvent::RemovedCategory { new })
             }
             CategoriesCommand::ChangeOrdering { new } => {
                 let older = self
