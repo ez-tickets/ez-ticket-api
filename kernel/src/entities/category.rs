@@ -15,11 +15,11 @@ use nitinol::process::{Applicator, Context, Process, Publisher};
 use nitinol::projection::Projection;
 use nitinol::projection::resolver::{Mapper, ResolveMapping};
 use nitinol::{EntityId, ToEntityId};
-use nitinol::process::eventstream::WithStreamPublisher;
+use nitinol::process::eventstream::{WithEventSubscriber, WithStreamPublisher};
 use crate::entities::product::ProductId;
 use crate::errors::{FormationError, ValidationError};
 use crate::io::commands::CategoryCommand;
-use crate::io::events::CategoryEvent;
+use crate::io::events::{CategoryEvent, ProductEvent};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Destructure, Mutation)]
 pub struct Category {
@@ -104,7 +104,13 @@ impl Publisher<CategoryCommand> for Category {
                         .attach_printable("Product does not exist in category"));
                 }
 
-                CategoryEvent::RemovedProduct { id, category: self.id }
+                let new = self.products.iter()
+                    .filter(|(_, exist)| *exist != &id)
+                    .enumerate()
+                    .map(|(idx, (_, id))| (idx as i64, *id))
+                    .collect();
+
+                CategoryEvent::RemovedProduct { category: self.id, new }
             }
             CategoryCommand::ChangeProductOrdering { new } => {
                 let older = self.products.values().copied().collect::<HashSet<_>>();
@@ -143,15 +149,22 @@ impl Applicator<CategoryEvent> for Category {
             }
             CategoryEvent::AddedProduct { id, ordering, .. } => {
                 self.products.insert(ordering, id);
+                self.subscribe(ctx).await;
             }
-            CategoryEvent::RemovedProduct { id, .. } => {
-                self.products.retain(|_, p| p != &id);
-            }
+            CategoryEvent::RemovedProduct { new, .. } |
             CategoryEvent::ChangedProductOrdering { new, .. } => {
                 self.products = new;
             }
         }
         tracing::debug!("State: {:?}", self);
+    }
+}
+
+impl WithEventSubscriber<ProductEvent> for Category {
+    type Command = CategoryCommand;
+
+    fn aggregate_id(&self) -> EntityId {
+        self.id.to_entity_id()
     }
 }
 
@@ -183,9 +196,7 @@ impl Projection<CategoryEvent> for Category {
             CategoryEvent::AddedProduct { id, ordering, .. } => {
                 self.products.insert(ordering, id);
             }
-            CategoryEvent::RemovedProduct { id, .. } => {
-                self.products.retain(|_, p| p != &id);
-            }
+            CategoryEvent::RemovedProduct { new, .. } |
             CategoryEvent::ChangedProductOrdering { new, .. } => {
                 self.products = new;
             }

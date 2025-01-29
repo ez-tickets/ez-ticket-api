@@ -2,6 +2,9 @@ use crate::entities::category::CategoryName;
 use crate::entities::product::ProductId;
 use nitinol::macros::Command;
 use std::collections::BTreeMap;
+use error_stack::Report;
+use crate::errors::FormationError;
+use crate::io::events::ProductEvent;
 
 /// CategoryCommand is a command that can be applied to a [`Category`](crate::entities::category::Category) entity.
 ///
@@ -22,4 +25,14 @@ pub enum CategoryCommand {
     AddProduct { id: ProductId },
     RemoveProduct { id: ProductId },
     ChangeProductOrdering { new: BTreeMap<i64, ProductId> },
+}
+
+impl TryFrom<ProductEvent> for CategoryCommand {
+    type Error = Report<FormationError>;
+    fn try_from(value: ProductEvent) -> Result<Self, Self::Error> {
+        match value {
+            ProductEvent::Deleted { id } => Ok(Self::RemoveProduct { id }),
+            _ => Err(Report::new(FormationError).attach_printable("Cannot convert event to command."))?,
+        }
+    }
 }
