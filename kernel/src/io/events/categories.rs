@@ -9,6 +9,6 @@ use std::collections::BTreeMap;
 #[persist(enc = "serde_json::to_vec", dec = "serde_json::from_slice")]
 pub enum CategoriesEvent {
     AddedCategory { id: CategoryId, ordering: i64 },
-    RemovedCategory { id: CategoryId },
+    RemovedCategory { new: BTreeMap<i64, CategoryId> },
     ChangedOrdering { new: BTreeMap<i64, CategoryId> },
 }
