@@ -30,7 +30,7 @@ pub(crate) mod utils {
         let Some(refs) = manager.find::<T>(id.clone()).await
             .change_context_lazy(|| ApplicationError::Process)? 
         else {
-            let replay = projector.projection_to_latest::<T>(id.clone(),  None).await
+            let replay = projector.projection_to_latest::<T>(id.clone(), None).await
                 .change_context_lazy(|| ApplicationError::Formation)?;
             let refs = manager.spawn(id, replay.0, replay.1).await
                 .change_context_lazy(|| ApplicationError::Process)?;

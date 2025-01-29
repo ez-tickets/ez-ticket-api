@@ -1,6 +1,6 @@
 #[derive(Debug, thiserror::Error)]
 pub enum ApplicationError {
-    #[error("Failed to convert request from server to command")]
+    #[error("The resource could not be found or the `Projection` may have failed.")]
     Formation,
     
     #[error("Failed to spawn process")]
@@ -14,4 +14,7 @@ pub enum ApplicationError {
     
     #[error("An error occurred due to kernel module")]
     Kernel,
+    
+    #[error("Invalid command")]
+    InvalidCommand,
 }
