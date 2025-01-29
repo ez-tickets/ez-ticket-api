@@ -3,8 +3,8 @@ use error_stack::{Report, ResultExt};
 use kernel::io::events::{CategoriesEvent, CategoryEvent};
 use nitinol::eventstream::resolver::{DecodeMapping, SubscriptionMapper};
 use nitinol::eventstream::EventSubscriber;
-use sqlx::{SqliteConnection, SqlitePool};
-
+use sqlx::{QueryBuilder, SqliteConnection, SqlitePool};
+use sqlx::types::Uuid;
 use crate::errors::FailedBuildReadModel;
 
 #[derive(Clone)]
@@ -186,18 +186,19 @@ impl InternalCategoryQueryModelService {
             .execute(&mut *con)
             .await
             .change_context_lazy(|| FailedBuildReadModel)?;
+
+
+        let mut query = QueryBuilder::new("INSERT INTO categories_ordering(category, ordering) ");
         
-        for (ordering, category) in new {
-            // language=sqlite
-            sqlx::query(r#"
-                INSERT INTO categories_ordering(category, ordering) VALUES (?, ?)
-            "#)
-                .bind(category.as_ref())
-                .bind(ordering)
-                .execute(&mut *con)
-                .await
-                .change_context_lazy(|| FailedBuildReadModel)?;
-        }
+        query.push_values(new, |mut q, (order, category)| {
+            q.push_bind::<Uuid>(category.into())
+                .push_bind(order);
+        });
+        
+        query.build()
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
         
         Ok(())
     }
@@ -265,18 +266,18 @@ impl InternalCategoryQueryModelService {
             .await
             .change_context_lazy(|| FailedBuildReadModel)?;
 
-        for (ordering, product) in new {
-            // language=sqlite
-            sqlx::query(r#"
-                INSERT INTO category_products_ordering(product, category, ordering) VALUES (?, ?, ?)
-            "#)
-                .bind(product.as_ref())
-                .bind(category.as_ref())
-                .bind(ordering)
-                .execute(&mut *con)
-                .await
-                .change_context_lazy(|| FailedBuildReadModel)?;
-        }
+        let mut query = QueryBuilder::new("INSERT INTO category_products_ordering(product, category, ordering) ");
+        
+        query.push_values(new, |mut q, (order, product)| {
+            q.push_bind::<Uuid>(product.into())
+                .push_bind(category.as_ref())
+                .push_bind(order);
+        });
+        
+        query.build()
+            .execute(&mut *con)
+            .await
+            .change_context_lazy(|| FailedBuildReadModel)?;
 
         Ok(())
     }
