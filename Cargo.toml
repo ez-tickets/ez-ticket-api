@@ -21,4 +21,4 @@ async-trait = "^0.1"
 
 [workspace.dependencies.nitinol]
 git = "https://github.com/HalsekiRaika/nitinol"
-rev = "c8ef28ec8d4629843ba32110afe43fa098092c10"
+rev = "1095f0cc10c3765af3ab95f58f926d989e6c8cf6"

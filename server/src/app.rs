@@ -12,6 +12,7 @@ use app_cmd::adapter::{DependOnEventProjector, DependOnProcessManager};
 use app_cmd::services::categories::DependOnCategoriesCommandService;
 use app_cmd::services::category::DependOnCategoryCommandService;
 use app_cmd::services::product::DependOnProductCommandService;
+use app_cmd::workflow::product::DependOnRegisterProductWithCategoryWorkflow;
 use app_query::models::{
     DependOnGetAllCategoriesQueryService, 
     DependOnGetAllProductQueryService, 
@@ -146,5 +147,15 @@ impl DependOnGetProductImageQueryService for Handler {
 
     fn get_product_image_query_service(&self) -> &Self::GetProductImageQueryService {
         &self.query_product
+    }
+}
+
+// -- Workflows
+
+impl DependOnRegisterProductWithCategoryWorkflow for Handler {
+    type RegisterProductWithCategoryWorkflow = Self;
+
+    fn register_product_with_category_workflow(&self) -> &Self::RegisterProductWithCategoryWorkflow {
+        self
     }
 }

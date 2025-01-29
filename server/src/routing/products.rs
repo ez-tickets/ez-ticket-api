@@ -1,4 +1,4 @@
-use axum::extract::{Multipart, Path, State};
+use axum::extract::{Multipart, Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
 
@@ -11,12 +11,11 @@ use app_query::models::{
     GetAllProductQueryService,
     GetProductQueryService, 
 };
-
 use kernel::entities::product::ProductId;
 use kernel::io::commands::ProductCommand;
 
 use crate::AppModule;
-use crate::routing::request::products::{PatchProduct, RegisterProduct};
+use crate::routing::request::products::{PatchProduct, RegisterProduct, RegisterProductWithCategory};
 
 
 #[cfg_attr(
@@ -86,6 +85,7 @@ pub async fn product_details(
 )]
 pub async fn register(
     State(app): State<AppModule>,
+    Query(query): Query<RegisterProductWithCategory>,
     multipart: Multipart,
 ) -> Result<StatusCode, StatusCode> {
     let cmd = match RegisterProduct::from_multipart(multipart).await
@@ -102,17 +102,28 @@ pub async fn register(
         }
     };
 
-    if let Err(e) = app.product_command_service()
-        .execute(None, cmd)
-        .await
-    {
-        tracing::error!("Failed to register product: {:?}", e);
-        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    match query.category {
+        None => {
+            if let Err(e) = app.product_command_service()
+                .execute(None, cmd)
+                .await
+            {
+                tracing::error!("Failed to register product: {:?}", e);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
+        Some(dest) => {
+            use app_cmd::workflow::product::{DependOnRegisterProductWithCategoryWorkflow, RegisterProductWithCategoryWorkflow};
+            let app = app.register_product_with_category_workflow();
+            if let Err(e) = RegisterProductWithCategoryWorkflow::execute(app, dest, cmd).await {
+                tracing::error!("Failed to register product with category: {:?}", e);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
     }
-
+    
     Ok(StatusCode::CREATED)
 }
-
 
 #[cfg_attr(
     feature = "apidoc",

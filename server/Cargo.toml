@@ -10,7 +10,7 @@ license = { workspace = true }
 apidoc = ["utoipa", "utoipa-swagger-ui"]
 
 [dependencies]
-axum = { version = "=0.8", features = ["json", "query", "multipart"] }
+axum = { version = "=0.8", features = ["json", "query", "multipart", "tracing"] }
 mime = "^0.3"
 
 tokio = { version = "^1", features = ["full"] }

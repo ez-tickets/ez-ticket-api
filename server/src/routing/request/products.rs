@@ -1,9 +1,19 @@
 use axum::extract::Multipart;
 use error_stack::{Report, ResultExt};
+use serde::Deserialize;
+use kernel::entities::category::CategoryId;
 use kernel::entities::product::{ProductDesc, ProductName, ProductPrice};
 use kernel::io::commands::ProductCommand;
 
 use crate::errors::ServerError;
+
+
+#[derive(Debug, Deserialize)]
+#[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
+pub struct RegisterProductWithCategory {
+    #[cfg_attr(feature = "apidoc", schema(value_type = Uuid))]
+    pub category: Option<CategoryId>
+}
 
 #[derive(Debug)]
 #[cfg_attr(feature = "apidoc", derive(utoipa::ToSchema))]
