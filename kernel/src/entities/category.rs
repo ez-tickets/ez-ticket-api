@@ -62,7 +62,12 @@ impl TryFrom<(CategoryId, CategoryCommand)> for Category {
     }
 }
 
-impl Process for Category {}
+#[async_trait]
+impl Process for Category {
+    async fn start(&self, ctx: &mut Context) {
+        self.subscribe(ctx).await;
+    }
+}
 
 impl WithPersistence for Category {
     fn aggregate_id(&self) -> EntityId {
@@ -71,6 +76,14 @@ impl WithPersistence for Category {
 }
 
 impl WithStreamPublisher for Category {
+    fn aggregate_id(&self) -> EntityId {
+        self.id.to_entity_id()
+    }
+}
+
+impl WithEventSubscriber<ProductEvent> for Category {
+    type Command = CategoryCommand;
+
     fn aggregate_id(&self) -> EntityId {
         self.id.to_entity_id()
     }
@@ -149,7 +162,6 @@ impl Applicator<CategoryEvent> for Category {
             }
             CategoryEvent::AddedProduct { id, ordering, .. } => {
                 self.products.insert(ordering, id);
-                self.subscribe(ctx).await;
             }
             CategoryEvent::RemovedProduct { new, .. } |
             CategoryEvent::ChangedProductOrdering { new, .. } => {
@@ -157,14 +169,6 @@ impl Applicator<CategoryEvent> for Category {
             }
         }
         tracing::debug!("State: {:?}", self);
-    }
-}
-
-impl WithEventSubscriber<ProductEvent> for Category {
-    type Command = CategoryCommand;
-
-    fn aggregate_id(&self) -> EntityId {
-        self.id.to_entity_id()
     }
 }
 
