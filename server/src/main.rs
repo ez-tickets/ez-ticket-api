@@ -1,3 +1,4 @@
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{delete, get};
 use axum::Router;
 use error_stack::{Report, ResultExt};
@@ -40,6 +41,7 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
         .nest("/products", products)
         .nest("/images", images)
         .merge(apidoc())
+        .layer(DefaultBodyLimit::disable())
         .with_state(app);
 
     let listener = TcpListener::bind("0.0.0.0:3650")
