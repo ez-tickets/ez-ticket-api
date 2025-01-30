@@ -94,7 +94,7 @@ impl Publisher<CategoryCommand> for Category {
     type Event = CategoryEvent;
     type Rejection = Report<ValidationError>;
 
-    #[tracing::instrument(skip_all, fields(id = %self.id))]
+    #[tracing::instrument(skip_all, fields(category = %self.id))]
     async fn publish(
         &self,
         command: CategoryCommand,
@@ -146,7 +146,7 @@ impl Publisher<CategoryCommand> for Category {
 
 #[async_trait]
 impl Applicator<CategoryEvent> for Category {
-    #[tracing::instrument(skip_all, fields(id = %self.id))]
+    #[tracing::instrument(skip_all, fields(category = %self.id))]
     async fn apply(&mut self, event: CategoryEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
         WithStreamPublisher::publish(self, &event, ctx).await;
