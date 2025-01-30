@@ -187,7 +187,10 @@ impl InternalCategoryQueryModelService {
             .execute(&mut *con)
             .await
             .change_context_lazy(|| FailedBuildReadModel)?;
-
+        
+        if new.is_empty() {
+            return Ok(())
+        }
 
         let mut query = QueryBuilder::new("INSERT INTO categories_ordering(category, ordering) ");
         
@@ -247,6 +250,10 @@ impl InternalCategoryQueryModelService {
             .await
             .change_context_lazy(|| FailedBuildReadModel)?;
 
+        if new.is_empty() {
+            return Ok(())
+        }
+
         let mut query = QueryBuilder::new("INSERT INTO category_products_ordering(product, category, ordering) ");
         
         query.push_values(new, |mut q, (order, product)| {
@@ -254,7 +261,7 @@ impl InternalCategoryQueryModelService {
                 .push_bind(category.as_ref())
                 .push_bind(order);
         });
-        
+
         query.build()
             .execute(&mut *con)
             .await
