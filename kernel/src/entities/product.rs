@@ -94,6 +94,7 @@ impl Publisher<ProductCommand> for Product {
     type Event = ProductEvent;
     type Rejection = Report<ValidationError>;
 
+    #[tracing::instrument(skip_all, fields(id = %self.id))]
     async fn publish(
         &self,
         command: ProductCommand,
@@ -126,6 +127,7 @@ impl Publisher<ProductCommand> for Product {
 
 #[async_trait]
 impl Applicator<ProductEvent> for Product {
+    #[tracing::instrument(skip_all, fields(id = %self.id))]
     async fn apply(&mut self, event: ProductEvent, ctx: &mut Context) {
         self.persist(&event, ctx).await;
         WithStreamPublisher::publish(self, &event, ctx).await;
