@@ -11,6 +11,7 @@ apidoc = ["utoipa", "utoipa-swagger-ui"]
 
 [dependencies]
 axum = { version = "=0.8", features = ["json", "query", "multipart", "tracing"] }
+tower-http = { version = "=0.6", features = ["cors", "trace"] }
 mime = "^0.3"
 
 tokio = { version = "^1", features = ["full"] }

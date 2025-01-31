@@ -3,6 +3,8 @@ use axum::routing::{delete, get};
 use axum::Router;
 use error_stack::{Report, ResultExt};
 use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
+use tower_http::trace::TraceLayer;
 use server::AppModule;
 use server::routing::*;
 use server::errors::UnrecoverableError;
@@ -35,13 +37,17 @@ async fn main() -> Result<(), Report<UnrecoverableError>> {
     
     let images = Router::new()
         .route("/{image_id}", get(images::get));
-    
+
+    let cors = CorsLayer::permissive();
+
     let router = Router::new()
         .nest("/categories", categories)
         .nest("/products", products)
         .nest("/images", images)
         .merge(apidoc())
         .layer(DefaultBodyLimit::disable())
+        .layer(TraceLayer::new_for_http())
+        .layer(cors)
         .with_state(app);
 
     let listener = TcpListener::bind("0.0.0.0:3650")
